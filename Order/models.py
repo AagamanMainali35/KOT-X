@@ -12,29 +12,17 @@ class Menu(models.Model):
     def __str__(self):
         return self.item_name
 
-class Order_Tracker(models.Model):
+class Order(models.Model):
+    table = models.ForeignKey(DiningTable, on_delete=models.CASCADE, related_name='orderTable')
+    def __str__(self):
+        return f"Order for Table {self.table.table_name}"
+
+class Order_Items(models.Model): # Bridging Table for Order and Menu_Items
     order_items=models.ForeignKey(Menu,on_delete=models.CASCADE)
     quantity=models.IntegerField()
     special_note = models.TextField(blank=True, null=True)
+    order_ins=models.ForeignKey(Order,on_delete=models.CASCADE,related_name='OrderItem')
 
     def __str__(self):
         return f"KOT {self.order_items.item_name} x {self.quantity}"
-
-    
-class Order(models.Model):
-    table = models.ForeignKey(DiningTable, on_delete=models.CASCADE, related_name='orders')
-    order_items=models.ForeignKey(Order_Tracker,on_delete=models.CASCADE,related_name='OrderItem')
-    def __str__(self):
-        return f"Order for Table {self.table.table_name}"
-    
-
-class Bill(models.Model):
-    Order_ins = models.ForeignKey(Order, on_delete=models.CASCADE)
-    Bill_Total = models.DecimalField(max_digits=10, decimal_places=2)
-    Billed_to = models.CharField(max_length=255)
-    VAT = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    Discount = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    Billing_Date = models.DateTimeField(auto_now_add=True)
-    
-    def __str__(self):
-        return f"Bill for {self.Billed_to} - Rs . {self.Bill_Total}"
+ 

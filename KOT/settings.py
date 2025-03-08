@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 # Base directory of the project - where manage.py lives
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,10 +38,12 @@ STATIC_URL = 'static/'
 # This is where files from all apps + STATICFILES_DIRS will be collected
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
- # Project-level static folder (create this!)
+# Project-level static folder (create this!)
 STATICFILES_DIRS = [
     BASE_DIR / 'static', 
 ]
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # SQLite database configuration
 DATABASES = {
     'default': {
@@ -65,7 +68,8 @@ INSTALLED_APPS = [
     # Djnago Applications
     'Authentication',                 
     'Tables',
-    'Order'
+    'Order',
+    'Billing'
 ]
 
 # Middleware components - processed in order for each request/response
