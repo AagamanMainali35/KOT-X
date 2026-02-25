@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-giou)2toat=xpu3h7!!t9c$9ks8b@h8zwy-h4gfwuv9i!@9kqr
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -69,9 +69,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'KOT.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
     'default': {
