@@ -59,8 +59,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',        # Flash messaging system
     'django.contrib.staticfiles',     # Static file management
     # Third-party apps
-    'rest_framework',                  # Django REST Framework
-    'Core',                            # main application
+    'rest_framework',                 # Django REST Framework
+    'rest_framework_simplejwt',       # JWT app for DRF
+    'Core',                           # main application
 ]
 
 # Middleware components - processed in order for each request/response
