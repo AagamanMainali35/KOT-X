@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-giou)2toat=xpu3h7!!t9c$9ks8b@h8zwy-h4gfwuv9i!@9kqr'
 
 # NOTE: Debug mode - Set to False in production! True shows detailed error pages Turn this to true for now 
-DEBUG = False
+DEBUG = True
 
 # Hosts/domains that can serve this Django application
 # NOTE: ['*'] means any host - NOT recommended for production!
