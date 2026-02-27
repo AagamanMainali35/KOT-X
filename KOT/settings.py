@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-giou)2toat=xpu3h7!!t9c$9ks8b@h8zwy-h4gfwuv9i!@9kqr'
 
 # NOTE: Debug mode - Set to False in production! True shows detailed error pages Turn this to true for now 
-DEBUG = True
+DEBUG = False
 
 # Hosts/domains that can serve this Django application
 # NOTE: ['*'] means any host - NOT recommended for production!
@@ -60,16 +60,18 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',     # Static file management
     # Third-party apps
     'rest_framework',                 # Django REST Framework
+    'whitenoise',                     # Whitenoise to serve static files
     'rest_framework_simplejwt',       # JWT app for DRF
-    'Core',                           # main application
+    'Authentication',                 # Authentication application
 ]
 
 # Middleware components - processed in order for each request/response
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',           # Security enhancements
+    'whitenoise.middleware.WhiteNoiseMiddleware',              # NOTE: Keep this Exactly here
     'django.contrib.sessions.middleware.SessionMiddleware',    # Session support
     'django.middleware.common.CommonMiddleware',               # Various HTTP features
-    'django.middleware.csrf.CsrfViewMiddleware',              # CSRF protection
+    'django.middleware.csrf.CsrfViewMiddleware',               # CSRF protection
     'django.contrib.auth.middleware.AuthenticationMiddleware', # Associate users with requests
     'django.contrib.messages.middleware.MessageMiddleware',    # Cookie-based messages
     'django.middleware.clickjacking.XFrameOptionsMiddleware',  # Clickjacking protection
