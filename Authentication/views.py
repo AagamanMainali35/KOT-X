@@ -14,8 +14,12 @@ def login_view(request):
     data=request.data
     serializer=LoginSerializer(data=data)
     if serializer.is_valid():
-        print(serializer.validated_data)
-        payload=serializer.login(serializer.validated_data)
+        action=serializer.validated_data['action']
+        print(action)
+        if action=='login':
+            payload=serializer.login(serializer.validated_data)
+        if action=="register":
+            payload=serializer.register(serializer.validated_data)
         response_data = {
         'data': payload,
         'success': True,
