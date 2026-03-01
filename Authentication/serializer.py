@@ -5,7 +5,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate  
 from . import utility
 
-class LoginSerializer(serializers.Serializer):
+class AuthSerializer(serializers.Serializer):
     """
     1. user should have email , password and action for login
     2. user shpuld provide username email password and first name and last name are optional 
@@ -143,3 +143,37 @@ class LoginSerializer(serializers.Serializer):
         print(validated_data)
         userobj=User.objects.create_user(**validated_data)
         return userobj
+    
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+       model=User
+       fields=['id','email','username','is_staff','is_active','is_superuser','password','first_name',"last_name"]
+       extra_kwargs={
+           "id":{
+               "read_only":True,
+               },
+           
+           "email":{
+                "allow_blank":False,
+                "required":True
+               },
+           
+           "password":{
+               "write_only":True,
+               "allow_blank":False,
+               "required":True
+               },
+           
+           "username":{
+                "allow_blank":False, 
+                "required":True
+           }
+       }
+              
+
+    def update(self, instance, validated_data):
+        instance.__dict__.update(**validated_data)
+        instance.save()
+        return instance
+    
+    
