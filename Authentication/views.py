@@ -1,11 +1,12 @@
 import json
 from rest_framework import status
-from .serializer import AuthSerializer , UserSerializer
+from .serializer import AuthSerializer , UserSerializer , ProfileSerializer
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import api_view 
 from django.contrib.auth.models import User
 from django.http import HttpResponse
+from .models import UserProfile 
 
 @api_view(['GET'])
 def home(request):
@@ -34,8 +35,9 @@ def login_view(request):
 @api_view(['GET'])
 def get_user_byID(request, pk):
     try:
-        user = User.objects.get(id=pk)
-        serializer = UserSerializer(instance=user)
+        userobj = User.objects.get(id=pk)
+        profileobj=UserProfile.objects.get(user=userobj)
+        serializer = ProfileSerializer(instance=profileobj)
         return Response({
             "data":serializer.data,
             "status_code": status.HTTP_200_OK  
@@ -49,7 +51,7 @@ def get_user_byID(request, pk):
         
 @api_view(['GET'])
 def get_all_users(request):
-    users = User.objects.all()
+    users = UserProfile.objects.all()
     if not users.exists():
         return Response({
             "data": [],
@@ -57,8 +59,27 @@ def get_all_users(request):
             "message": "No users found"
         }, status=status.HTTP_404_NOT_FOUND)
     
-    serializer = UserSerializer(users, many=True)
+    serializer = ProfileSerializer(users, many=True)
     return Response({
         "data": serializer.data,
         "status_code": status.HTTP_200_OK
     }, status=status.HTTP_200_OK)
+    
+    
+@api_view(['PATCH'])
+def update_user(request,pk):
+    try:
+        profile=UserProfile.objects.get(id=pk)
+        serializer=ProfileSerializer(instance=profile,data=request.data,partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({
+                "data": serializer.data,
+                "status": status.HTTP_200_OK
+            }, status=status.HTTP_200_OK)
+       
+    except UserProfile.DoesNotExist :
+        return Response({
+            "data":"No user Found",
+            "status":status.HTTP_404_NOT_FOUND
+        },status=status.HTTP_404_NOT_FOUND)

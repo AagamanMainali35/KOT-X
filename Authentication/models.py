@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-class User(models.Model):
+class UserProfile(models.Model):
     ROLE_CHOICES = [
         ('admin', 'Admin'),
         ('owner', 'Owner'),
@@ -9,16 +9,15 @@ class User(models.Model):
         ('staff', 'Staff'),
         ('chef', 'Chef'),
     ]
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES , default='staff',null=False , blank= False)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    user=models.OneToOneField(User,on_delete=models.CASCADE)
     def __str__(self):
         return f"{self.id} ({self.role})"
     
 class DiningTable(models.Model):
-    
     table_name = models.CharField(max_length=50)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=False)
 
     def __str__(self):
         return self.table_name

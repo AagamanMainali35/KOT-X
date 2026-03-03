@@ -1,8 +1,9 @@
 from rest_framework import serializers
-from django.db import models
 from django.contrib.auth.models import User
+from .models import UserProfile , DiningTable
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate  
+from .utility import check_pass
 from . import utility
 
 class AuthSerializer(serializers.Serializer):
@@ -142,17 +143,14 @@ class AuthSerializer(serializers.Serializer):
         validated_data.pop("action", None)
         print(validated_data)
         userobj=User.objects.create_user(**validated_data)
-        return userobj
-    
+        UserProfile.objects.create(user=userobj)
+        return 
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
        model=User
-       fields=['id','email','username','is_staff','is_active','is_superuser','password','first_name',"last_name"]
+       fields=['email','username','is_staff','is_active','is_superuser','password','first_name',"last_name"]
        extra_kwargs={
-           "id":{
-               "read_only":True,
-               },
-           
            "email":{
                 "allow_blank":False,
                 "required":True
@@ -169,11 +167,68 @@ class UserSerializer(serializers.ModelSerializer):
                 "required":True
            }
        }
-              
-
+       
     def update(self, instance, validated_data):
-        instance.__dict__.update(**validated_data)
+        password = validated_data.pop("password", None)
+        result,message,msg_title=check_pass(password)
+        if not result:
+            raise serializers.ValidationError({msg_title:message}) 
+        else:
+            setattr(instance,"password",password) 
+            for key,value in validated_data.items():
+                setattr(instance,key,value)
         instance.save()
         return instance
     
+class ProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    class Meta:
+        model=UserProfile
+        fields=["role",'user']
+        extra_kwargs={
+            "role":{
+                "allow_blank":False,
+                "error_messages":{
+                    "blank":"Empty Value not Detected. "
+                }
+                }
+        }
+        
+    def to_internal_value(self, data):
+            user_fields = [
+                "id",
+                "username",
+                "first_name",
+                "last_name",
+                "email",
+                "password"
+            ]
+            data=data.copy()
+            if "user" not in data:
+                user_data={}
+                for field in user_fields:
+                    if field in data:
+                        user_data[field] = data.pop(field)
+                data["user"]=user_data
+                
+            return super().to_internal_value(data)
+                
+    def validate_role(self, data):
+        if not data.strip():
+            raise serializers.ValidationError("Empty value not allowed for role.")
+        return data
+        
+    def update(self,instance,validated_data):
+        if "user" in self.validated_data:
+            user_data=validated_data.pop("user")
+            user=instance.user
+            serializer=UserSerializer(instance=user,data=user_data,partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        for key,value in validated_data.items():
+            setattr(instance,key,value)
+        instance.save()
+        return instance
+
+
     
