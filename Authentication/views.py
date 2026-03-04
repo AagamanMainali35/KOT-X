@@ -1,12 +1,12 @@
 import json
 from rest_framework import status
-from .serializer import AuthSerializer , UserSerializer , ProfileSerializer
+from .serializer import AuthSerializer , UserSerializer , ProfileSerializer , TableSerializer
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import api_view 
 from django.contrib.auth.models import User
 from django.http import HttpResponse
-from .models import UserProfile 
+from .models import UserProfile , DiningTable
 
 @api_view(['GET'])
 def home(request):
@@ -83,3 +83,49 @@ def update_user(request,pk):
             "data":"No user Found",
             "status":status.HTTP_404_NOT_FOUND
         },status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['GET'])
+def get_all_tables(request):
+    tables = DiningTable.objects.all()
+    serializer = TableSerializer(tables, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_table_by_id(request, pk):
+    try:
+        table = DiningTable.objects.get(pk=pk)
+    except DiningTable.DoesNotExist:
+        return Response({'error': 'Table not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = TableSerializer(table)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['PUT'])
+def update_table(request, pk):
+    try:
+        table = DiningTable.objects.get(pk=pk)
+    except DiningTable.DoesNotExist:
+        return Response({'error': 'Table not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = TableSerializer(table, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+def create_table(request):
+    table_name = request.data.get("table_name")
+    if not table_name:
+        return Response({"error": "table_name is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Use get_or_create to avoid duplicates
+    table, created = DiningTable.objects.get_or_create(table_name=table_name)
+    serializer = TableSerializer(table)
+    return Response(
+        {
+            "table": serializer.data,
+            "created": created
+        },
+        status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
+    )
