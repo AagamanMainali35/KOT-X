@@ -62,7 +62,9 @@ INSTALLED_APPS = [
     'rest_framework',                 # Django REST Framework
     'whitenoise',                     # Whitenoise to serve static files
     'rest_framework_simplejwt',       # JWT app for DRF
-    'Authentication',                 # Authentication application
+    # Djnago Applications
+    'Authentication',                 
+    'Tables'
 ]
 
 # Middleware components - processed in order for each request/response

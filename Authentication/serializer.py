@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import UserProfile , DiningTable
+from .models import UserProfile
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate  
 from .utility import check_pass
@@ -229,14 +229,3 @@ class ProfileSerializer(serializers.ModelSerializer):
             setattr(instance,key,value)
         instance.save()
         return instance
-
-class TableSerializer(serializers.ModelSerializer):
-    class Meta:
-        model=DiningTable
-        fields="__all__"
-        extra_kwargs={
-            "created_at":{
-                "read_only":True
-            }
-        }
-    

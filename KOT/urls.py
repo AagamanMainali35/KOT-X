@@ -18,11 +18,12 @@ from django.contrib import admin
 from django.urls import path
 from Authentication import views 
 from django.urls import include
-import Authentication
+import Authentication , Tables
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('',views.home),
-    path('User/',include('Authentication.urls'))
+    path('User/',include('Authentication.urls')),
+    path('Tables/',include('Tables.urls'))
 ]
