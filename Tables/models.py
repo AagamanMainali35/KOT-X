@@ -8,7 +8,6 @@ class DiningTable(models.Model):
     def __str__(self):
         return self.table_name
 
-
 class Order(models.Model):
     STATUS_CHOICES = [
         ('open', 'Open'),
@@ -42,7 +41,6 @@ class Order_Tracker(models.Model):
     def __str__(self):
         return f"KOT {self.id} for Order {self.order.id}"
     
-
 class Item(models.Model):
     item_name = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)

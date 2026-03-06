@@ -1,6 +1,4 @@
 from django.shortcuts import render
-
-# Create your views here.
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -41,7 +39,7 @@ def create_table(request):
     table_name = request.data.get("table_name")
     if not table_name:
         return Response({"error": "table_name is required"}, status=status.HTTP_400_BAD_REQUEST)
-
+    
     # Use get_or_create to avoid duplicates
     table, created = DiningTable.objects.get_or_create(table_name=table_name)
     serializer = TableSerializer(table)

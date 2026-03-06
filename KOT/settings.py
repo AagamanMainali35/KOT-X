@@ -135,3 +135,6 @@ SIMPLE_JWT = {
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',  # Look in Authorization header
     
 }
+
+TIME_ZONE = 'Asia/Kathmandu'
+USE_TZ = True
