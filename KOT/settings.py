@@ -64,7 +64,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',       # JWT app for DRF
     # Djnago Applications
     'Authentication',                 
-    'Tables'
+    'Tables',
+    'Order'
 ]
 
 # Middleware components - processed in order for each request/response

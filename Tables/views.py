@@ -4,23 +4,29 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import DiningTable
 from .serializer import TableSerializer
+from decorator.role import role_required
+from rest_framework.decorators import api_view , permission_classes
+from rest_framework.permissions import IsAuthenticated
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_all_tables(request):
     tables = DiningTable.objects.all()
     serializer = TableSerializer(tables, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_table_by_id(request, pk):
     try:
         table = DiningTable.objects.get(pk=pk)
     except DiningTable.DoesNotExist:
         return Response({'error': 'Table not found'}, status=status.HTTP_404_NOT_FOUND)
-
     serializer = TableSerializer(table)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+@role_required(['manager','owner'])
+@permission_classes([IsAuthenticated])
 @api_view(['PUT'])
 def update_table(request, pk):
     try:
@@ -34,6 +40,8 @@ def update_table(request, pk):
         return Response(serializer.data, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@role_required(['manager','owner'])
+@permission_classes([IsAuthenticated])
 @api_view(['POST'])
 def create_table(request):
     table_name = request.data.get("table_name")

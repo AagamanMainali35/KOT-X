@@ -3,7 +3,8 @@ from rest_framework import status
 from .serializer import AuthSerializer , UserSerializer , ProfileSerializer
 from django.shortcuts import render
 from rest_framework.response import Response
-from rest_framework.decorators import api_view 
+from rest_framework.decorators import api_view , permission_classes
+from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
 from django.http import HttpResponse
 from .models import UserProfile 
@@ -33,6 +34,7 @@ def login_view(request):
         return Response({'message':'Authentication Failed','error':serializer.errors,'status':f'{status.HTTP_401_UNAUTHORIZED}'},status.HTTP_401_UNAUTHORIZED)
     
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_user_byID(request, pk):
     try:
         userobj = User.objects.get(id=pk)
@@ -50,6 +52,7 @@ def get_user_byID(request, pk):
         }, status=status.HTTP_404_NOT_FOUND)    
         
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_all_users(request):
     users = UserProfile.objects.all()
     if not users.exists():
@@ -67,6 +70,7 @@ def get_all_users(request):
     
     
 @api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
 def update_user(request,pk):
     try:
         profile=UserProfile.objects.get(id=pk)
