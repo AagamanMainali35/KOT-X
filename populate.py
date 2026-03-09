@@ -1,23 +1,31 @@
 import os
-import django
 import random
 from decimal import Decimal
+
+import django
 from faker import Faker
 
 # Setup Django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "KOT.settings")
 django.setup()
 
-from Order.models import Menu, Order, Order_Tracker, Bill
+from Order.models import Bill, Menu, Order, Order_Tracker
 from Tables.models import DiningTable
 
 fake = Faker()
 
 # 1️⃣ Create Menu items
 dishes = [
-    "Margherita Pizza", "Veggie Burger", "Chicken Burger", "Pasta Carbonara",
-    "Caesar Salad", "Sushi Roll", "Tacos", "Grilled Sandwich",
-    "Tomato Soup", "Chocolate Cake"
+    "Margherita Pizza",
+    "Veggie Burger",
+    "Chicken Burger",
+    "Pasta Carbonara",
+    "Caesar Salad",
+    "Sushi Roll",
+    "Tacos",
+    "Grilled Sandwich",
+    "Tomato Soup",
+    "Chocolate Cake",
 ]
 
 menu_items = []
@@ -26,7 +34,7 @@ for _ in range(10):
         item_name=random.choice(dishes),  # pick from manual list
         price=round(random.uniform(50, 500), 2),
         is_available=random.choice([True, True, True, False]),
-        item_picture="menuItems/placeholder.jpg"
+        item_picture="menuItems/placeholder.jpg",
     )
     menu_items.append(item)
 
@@ -53,7 +61,7 @@ for _ in range(5):
             order_items=menu_item,
             quantity=quantity,
             special_note=fake.sentence(nb_words=6),
-            order_ins=order
+            order_ins=order,
         )
 
 print("Orders + Order_Tracker created:", len(orders))
@@ -71,7 +79,7 @@ for order in orders:
         Bill_Total=round(total, 2),
         Billed_to=fake.name(),
         VAT=round(vat, 2),
-        Discount=round(discount, 2)
+        Discount=round(discount, 2),
     )
 
 print("Bills created successfully!")
