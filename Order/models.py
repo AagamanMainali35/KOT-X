@@ -13,15 +13,15 @@ class Menu(models.Model):
         return self.item_name
 
 class Order(models.Model):
-    table = models.ForeignKey(DiningTable, on_delete=models.CASCADE, related_name='orderTable')
+    table = models.OneToOneField(DiningTable, on_delete=models.CASCADE, related_name='orderTable')
     def __str__(self):
         return f"Order for Table {self.table.table_name}"
 
 class Order_Items(models.Model): # Bridging Table for Order and Menu_Items
+    order_ins=models.ForeignKey(Order,on_delete=models.CASCADE,related_name='OrderItem')
     order_items=models.ForeignKey(Menu,on_delete=models.CASCADE)
     quantity=models.IntegerField()
     special_note = models.TextField(blank=True, null=True)
-    order_ins=models.ForeignKey(Order,on_delete=models.CASCADE,related_name='OrderItem')
 
     def __str__(self):
         return f"KOT {self.order_items.item_name} x {self.quantity}"
