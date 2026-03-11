@@ -7,29 +7,42 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Order', '0001_initial'),
-        ('Tables', '0003_delete_item_remove_order_tracker_order_and_more'),
+        ("Order", "0001_initial"),
+        ("Tables", "0003_delete_item_remove_order_tracker_order_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='order',
-            name='order_items',
+            model_name="order",
+            name="order_items",
         ),
         migrations.AddField(
-            model_name='order_tracker',
-            name='order_ins',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, related_name='OrderItem', to='Order.order'),
+            model_name="order_tracker",
+            name="order_ins",
+            field=models.ForeignKey(
+                default=1,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="OrderItem",
+                to="Order.order",
+            ),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='bill',
-            name='Order_ins',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='OrderObj', to='Order.order'),
+            model_name="bill",
+            name="Order_ins",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="OrderObj",
+                to="Order.order",
+            ),
         ),
         migrations.AlterField(
-            model_name='order',
-            name='table',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='orderTable', to='Tables.diningtable'),
+            model_name="order",
+            name="table",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="orderTable",
+                to="Tables.diningtable",
+            ),
         ),
     ]

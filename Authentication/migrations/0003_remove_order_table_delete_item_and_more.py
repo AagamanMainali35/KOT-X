@@ -6,36 +6,39 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Authentication', '0002_alter_order_tracker_created_by_alter_order_opened_by_and_more'),
+        (
+            "Authentication",
+            "0002_alter_order_tracker_created_by_alter_order_opened_by_and_more",
+        ),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='order',
-            name='table',
+            model_name="order",
+            name="table",
         ),
         migrations.DeleteModel(
-            name='Item',
+            name="Item",
         ),
         migrations.RemoveField(
-            model_name='order',
-            name='opened_by',
+            model_name="order",
+            name="opened_by",
         ),
         migrations.RemoveField(
-            model_name='order_tracker',
-            name='order',
+            model_name="order_tracker",
+            name="order",
         ),
         migrations.RemoveField(
-            model_name='order_tracker',
-            name='created_by',
+            model_name="order_tracker",
+            name="created_by",
         ),
         migrations.DeleteModel(
-            name='DiningTable',
+            name="DiningTable",
         ),
         migrations.DeleteModel(
-            name='Order',
+            name="Order",
         ),
         migrations.DeleteModel(
-            name='Order_Tracker',
+            name="Order_Tracker",
         ),
     ]

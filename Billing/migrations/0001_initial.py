@@ -9,20 +9,38 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('Order', '0005_delete_bill'),
+        ("Order", "0005_delete_bill"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Bill',
+            name="Bill",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('Bill_Total', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('Billed_to', models.CharField(max_length=255)),
-                ('VAT', models.DecimalField(decimal_places=2, default=0, max_digits=5)),
-                ('Discount', models.DecimalField(decimal_places=2, default=0, max_digits=5)),
-                ('Billing_Date', models.DateTimeField(auto_now_add=True)),
-                ('Order_ins', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='OrderObj', to='Order.order')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("Bill_Total", models.DecimalField(decimal_places=2, max_digits=10)),
+                ("Billed_to", models.CharField(max_length=255)),
+                ("VAT", models.DecimalField(decimal_places=2, default=0, max_digits=5)),
+                (
+                    "Discount",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=5),
+                ),
+                ("Billing_Date", models.DateTimeField(auto_now_add=True)),
+                (
+                    "Order_ins",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="OrderObj",
+                        to="Order.order",
+                    ),
+                ),
             ],
         ),
     ]

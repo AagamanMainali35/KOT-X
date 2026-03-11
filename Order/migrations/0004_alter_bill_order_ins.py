@@ -7,13 +7,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Order', '0003_rename_order_tracker_order_items'),
+        ("Order", "0003_rename_order_tracker_order_items"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='bill',
-            name='Order_ins',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='OrderObj', to='Order.order'),
+            model_name="bill",
+            name="Order_ins",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="OrderObj",
+                to="Order.order",
+            ),
         ),
     ]

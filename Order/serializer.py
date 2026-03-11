@@ -1,41 +1,111 @@
-from rest_framework import serializers 
-from .models import Order_Items,Order,Menu  
+from rest_framework import serializers
+
+from .models import Menu, Order, Order_Items
+
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model=Order_Items
-        fields="__all__"
-        read_only_fields=["order_ins"]
-        
-    def to_representation(self, instance):
-        data={
-        "OrderItemID":instance.id,
-        "Item": instance.order_items.item_name,
-        "quantity": instance.quantity,
-        "special_note": instance.special_note,
+    """
+    Feilds: 👇
+    order_ins=models.ForeignKey(Order,on_delete=models.CASCADE,related_name='OrderItem')
+    order_items=models.ForeignKey(Menu,on_delete=models.CASCADE)
+    quantity=models.IntegerField()
+    special_note = models.TextField(blank=True, null=True)
+    """
+
+    OrderItemID = serializers.IntegerField(required=False)
+    extra_kwargs = {
+            "order_ins": {"required": False}  # optional input
         }
-        return data
-            
-class OrderSerializer(serializers.ModelSerializer):
-    OrderItem=OrderItemSerializer(many=True) 
+
     class Meta:
-        model=Order
-        fields="__all__"
-        
+        model = Order_Items
+        fields = "__all__"
+        extra_kwargs = {
+            "order_ins": {"read_only": True}  # same effect
+        }
+    
+    def to_internal_value(self, data):  # For rejecting extra feild
+        extra_fields = [key for key in data.keys() if key not in self.fields]
+        if extra_fields:
+            raise serializers.ValidationError(
+                {field: "This field is not allowed." for field in extra_fields}
+            )
+        return super().to_internal_value(data)
+
+    def to_representation(self, instance): 
+
+        data = {
+            #  No need order_Id since it will be present when getting info of whole order
+            "OrderItemID": instance.id,  # Filtered from payload since auto_read by default
+            "Item": instance.order_items.item_name,
+            "quantity": instance.quantity,
+            "special_note": instance.special_note,
+        }
+        return data 
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    """
+    Feilds: 👇
+    table = models.OneToOneField(DiningTable, on_delete=models.CASCADE, related_name='orderTable')
+    """
+
+    Items = OrderItemSerializer(many=True, source="OrderItem")
+    class Meta:
+        model = Order
+        fields = "__all__"
+
+    def to_internal_value(self, data):
+        print(data)# For rejecting extra feild
+        print('From to_internal')
+        extra_fields = [key for key in data.keys() if key not in self.fields]
+        if extra_fields:
+            raise serializers.ValidationError(
+                {field: "This field is not allowed." for field in extra_fields}
+            )
+        return super().to_internal_value(data)
+    
+    def  validate(self, attrs):
+        print('from validate method')
+        return super().validate(attrs)
+
     def create(self, validated_data):
-        print('from create')
+        print("from create")
         print(validated_data)
-        items=validated_data.pop('OrderItem',[])
-        Orders=Order.objects.create(table=validated_data['table'])
+        items = validated_data.pop("Items", [])
+        print(items)
+        Orders = Order.objects.create(table=validated_data["table"])
         for json in items:
-            Order_Items.objects.create(order_ins=Orders,**json)
+            Order_Items.objects.create(order_ins=Orders, **json)
         return Orders
-    
+
     def update(self, instance, validated_data):
-        pass
-    
-        
-    
-        
-    
-        
+        print(validated_data)
+        OrderItems = validated_data.pop("Items", [])
+        setattr(instance, "table", validated_data["table"])
+        for itemsList in OrderItems:
+            objID = itemsList.get("OrderItemID")
+            try:
+                Items = Order_Items.objects.get(id=objID)
+                itemsList.pop("OrderItemID")
+                serializer = OrderItemSerializer(
+                    instance=Items,
+                    data={
+                        "order_ins": instance.id,
+                        "order_items": itemsList["order_items"].id,
+                        "quantity": itemsList.get("quantity"),
+                        "special_note": itemsList.get("special_note"),
+                    },
+                )
+                serializer.is_valid(raise_exception=True)  # validate the data
+                serializer.save()
+            except Order_Items.DoesNotExist:
+                raise serializers.ValidationError(
+                    f"OrderItem with ID {objID} does not exist for this order."
+                )
+            except KeyError as e:
+                raise serializers.ValidationError(f"Missing required field: {str(e)}")
+            except Exception as e:
+                raise serializers.ValidationError(f"Unknown error: {str(e)}")
+        instance.save()
+        return instance
