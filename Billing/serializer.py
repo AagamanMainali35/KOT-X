@@ -44,7 +44,6 @@ class BillingSerializer(serializers.ModelSerializer):
         'discount_percentage': float(instance.Discount),
         'discounted_value': float(instance.Bill_Total)
     }
-        
         return data
         
     
@@ -80,9 +79,7 @@ class BillingSerializer(serializers.ModelSerializer):
         
         Bill_obj=Bill.objects.create(Order_ins=oid,Billed_to=name,VAT=vat,Discount=discount,Bill_Total=total)
         return Bill_obj
-    
-    def update():
-        pass
+
     
         
 
