@@ -1,16 +1,29 @@
-"""
-ASGI config for KOT project.
-
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/6.0/howto/deployment/asgi/
-"""
+# your_project/asgi.py
 
 import os
-
 from django.core.asgi import get_asgi_application
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+from channels.security.websocket import AllowedHostsOriginValidator
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "KOT.settings")
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'KOT.settings')
 
-application = get_asgi_application()
+# Django ASGI application (handles HTTP)
+django_asgi_app = get_asgi_application()
+
+import Order.routing
+
+# Main ASGI application
+application = ProtocolTypeRouter({
+    # HTTP requests go to Django
+    "http": django_asgi_app,
+    
+    # WebSocket requests go to Channels
+    "websocket": AllowedHostsOriginValidator(
+        AuthMiddlewareStack(
+            URLRouter(
+               Order.routing.websocket_urlpatterns
+            )
+        )
+    ),
+})

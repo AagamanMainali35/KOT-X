@@ -37,7 +37,11 @@ class OrderItemSerializer(serializers.ModelSerializer):
         data = {
             #  No need order_Id since it will be present when getting info of whole order
             "OrderItemID": instance.id,  # Filtered from payload since auto_read by default
-            "Item": instance.order_items.item_name,
+            "Item":{
+                "item_name": instance.order_items.item_name,
+                "image": instance.order_items.item_picture.url,
+                "price": float(instance.order_items.price)
+                },
             "quantity": instance.quantity,
             "special_note": instance.special_note,
         }

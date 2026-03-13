@@ -38,6 +38,11 @@ STATIC_URL = "static/"
 # This is where files from all apps + STATICFILES_DIRS will be collected
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# ASGI application pathway
+
+ASGI_APPLICATION = 'KOT.asgi.application'
+WSGI_APPLICATION='KOT.wsgi.application'
+
 # Project-level static folder (create this!)
 STATICFILES_DIRS = [
     BASE_DIR / "static",
@@ -70,6 +75,7 @@ INSTALLED_APPS = [
     "Tables",
     "Order",
     "Billing",
+    'Livedata'
 ]
 
 # Middleware components - processed in order for each request/response
@@ -136,6 +142,16 @@ SIMPLE_JWT = {
     # Custom header format
     "AUTH_HEADER_TYPES": ("Token_ID",),  # Use "Token_ID" instead of "Bearer"
     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",  # Look in Authorization header
+}
+
+# Setting up the  channel layer for instances
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
 }
 
 TIME_ZONE = "Asia/Kathmandu"
