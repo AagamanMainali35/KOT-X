@@ -1,4 +1,33 @@
-/env
-/staticfiles
-commit.py
-build.sh
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+#static_files
+staticfiles/
+test_*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Django
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+/__pycache__
+
+# Bat and log test files 
+.exe
+.bat
+.sh
