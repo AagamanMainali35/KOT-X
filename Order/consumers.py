@@ -2,8 +2,8 @@ from channels.generic.websocket import WebsocketConsumer
 from Order.serializer import *
 from .models import Order
 import json
+from asgiref.sync import async_to_sync
 
-# constants.py
 class CloseCodes:
     """Custom close codes for your application"""
     
@@ -16,7 +16,6 @@ class CloseCodes:
     # Order related (4200-4299)
     ORDER_NOT_FOUND = 4200
     
-    
     # Business logic (4400-4499)
     INSUFFICIENT_FUNDS = 4400
     ITEM_OUT_OF_STOCK = 4401
@@ -24,25 +23,36 @@ class CloseCodes:
 
 class OrderConsumer(WebsocketConsumer):
     def connect(self):
-        self.order_id=self.scope['url_route']['kwargs']['order_id']
+        self.order_id = self.scope['url_route']['kwargs']['order_id']
         try:
             Order.objects.get(id=self.order_id)
-            self.orderGroup=f'order_{self.order_id}'
-            self.channel_layer.group_add(self.orderGroup,self.channel_name)
+            self.orderGroup = f'order_{self.order_id}'
+            async_to_sync(self.channel_layer.group_add)(self.orderGroup, self.channel_name)
+            self.accept()
+            self.send_preloaded_data()
         except Order.DoesNotExist:
-            self.close(code =CloseCodes.ORDER_NOT_FOUND,reason='Invalid Id provided')
-        self.accept()
-        self.send_preloaded_data()
-            
+            self.accept()
+            self.close(code=CloseCodes.ORDER_NOT_FOUND, reason='Invalid Id provided')
+            return  
+    
     def send_preloaded_data(self):
-        Orderdata=Order.objects.get(id=self.order_id)
-        serializers=OrderSerializer(Orderdata)
-        self.send(
-            text_data=json.dumps(serializers.data)
-        )
+        Orderdata = Order.objects.get(id=self.order_id)
+        serializer = OrderSerializer(Orderdata)
+        self.send(text_data=json.dumps(serializer.data))
 
-    def recieve(self):
+    def receive(self):
         pass
     
-    def diconnect(self):
-        pass
+    def disconnect(self, code):
+        print(f"🔴 DISCONNECTED: Order {self.order_id}")
+        async_to_sync(self.channel_layer.group_discard)(
+            self.orderGroup, self.channel_name
+        )
+    
+    def update_order(self, event):
+        try:
+            data = event['data']
+            self.send(text_data=json.dumps(data))
+        except Exception as e:
+            print("❌ ERROR in haha:", e)
+
