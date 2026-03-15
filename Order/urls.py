@@ -8,5 +8,5 @@ urlpatterns = [
     path("Items/", get_all_ordersItems),
     path("AddItem/", addItem),
     path("create/", create_Order),
-    path("update/<int:pk>/", update_Order),
+    path("update/<str:pk>/", update_Order),
 ]
