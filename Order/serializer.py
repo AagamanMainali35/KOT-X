@@ -38,6 +38,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
             #  No need order_Id since it will be present when getting info of whole order
             "OrderItemID": instance.id,  # Filtered from payload since auto_read by default
             "Item":{
+                "item_id":instance.order_items.id,
                 "item_name": instance.order_items.item_name,
                 "image": instance.order_items.item_picture.url,
                 "price": float(instance.order_items.price)
@@ -60,8 +61,6 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def to_internal_value(self, data):
-        print(data)# For rejecting extra feild
-        print('From to_internal')
         extra_fields = [key for key in data.keys() if key not in self.fields]
         if extra_fields:
             raise serializers.ValidationError(
@@ -70,28 +69,22 @@ class OrderSerializer(serializers.ModelSerializer):
         return super().to_internal_value(data)
     
     def  validate(self, attrs):
-        print('from validate method')
         return super().validate(attrs)
 
     def create(self, validated_data):
-        print("from create")
-        print(validated_data)
         items = validated_data.pop("Items", [])
-        print(items)
         Orders = Order.objects.create(table=validated_data["table"])
         for json in items:
             Order_Items.objects.create(order_ins=Orders, **json)
         return Orders
 
     def update(self, instance, validated_data):
-        print(validated_data)
-        OrderItems = validated_data.pop("Items", [])
+        OrderItems = validated_data.pop("OrderItem", [])
         setattr(instance, "table", validated_data["table"])
         for itemsList in OrderItems:
             objID = itemsList.get("OrderItemID")
             try:
                 Items = Order_Items.objects.get(id=objID)
-                itemsList.pop("OrderItemID")
                 serializer = OrderItemSerializer(
                     instance=Items,
                     data={
