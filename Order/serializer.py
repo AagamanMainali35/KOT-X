@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Menu, Order, Order_Items
+from .models import Menu, Order, Order_Items , DiningTable
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -59,6 +59,7 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = "__all__"
+        depth=1
 
     def to_internal_value(self, data):
         extra_fields = [key for key in data.keys() if key not in self.fields]
@@ -69,11 +70,18 @@ class OrderSerializer(serializers.ModelSerializer):
         return super().to_internal_value(data)
     
     def  validate(self, attrs):
-        return super().validate(attrs)
-
+        tabel_id=attrs["table"]
+        table=DiningTable.objects.get(id=tabel_id.id)
+        query_set=table.orderTable.filter(order_status='active')
+        if query_set:
+            raise serializers.ValidationError({'Table':'Table occupied'})
+        return attrs
+    
     def create(self, validated_data):
-        items = validated_data.pop("Items", [])
-        Orders = Order.objects.create(table=validated_data["table"])
+        print(validated_data)
+        items = validated_data.pop("OrderItem", [])
+        print(items)
+        Orders = Order.objects.create(table=validated_data["table"],waiter=validated_data['waiter'])
         for json in items:
             Order_Items.objects.create(order_ins=Orders, **json)
         return Orders
