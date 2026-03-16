@@ -30,4 +30,4 @@ test_*
 # Bat and log test files 
 .exe
 .bat
-.sh
+*.sh
