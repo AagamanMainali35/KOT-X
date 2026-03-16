@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 from Tables.models import DiningTable
 
@@ -16,10 +17,15 @@ class Menu(models.Model):
 
 
 class Order(models.Model):
-    table = models.OneToOneField(
+    table = models.ForeignKey(
         DiningTable, on_delete=models.CASCADE, related_name="orderTable"
     )
-
+    waiter=models.ForeignKey(User,on_delete=models.CASCADE)
+    Tip=models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(49)], default=0)
+    order_status=models.CharField(choices=[
+        ('active','active'),
+        ('completed','completed')
+        ], max_length=50,default='active')
     def __str__(self):
         return f"Order for Table {self.table.table_name} - {self.id}"
 
@@ -33,4 +39,4 @@ class Order_Items(models.Model):  # Bridging Table for Order and Menu_Items
     special_note = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"KOT {self.order_items.item_name} x {self.quantity}"
+        return f"KOT {self.order_items.item_name} x {self.quantity} - {self.id}"
