@@ -1,6 +1,7 @@
 from rest_framework import serializers
+from rich import print
 
-from .models import Menu, Order, Order_Items , DiningTable
+from .models import DiningTable, Menu, Order, Order_Items
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -13,17 +14,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
     """
 
     OrderItemID = serializers.IntegerField(required=False)
-    extra_kwargs = {
-            "order_ins": {"required": False}  # optional input
-        }
+    extra_kwargs = {"order_ins": {"required": False}}  # optional input
 
     class Meta:
         model = Order_Items
         fields = "__all__"
-        extra_kwargs = {
-            "order_ins": {"read_only": True}  # same effect
-        }
-    
+        extra_kwargs = {"order_ins": {"read_only": True}}  # same effect
+
     def to_internal_value(self, data):  # For rejecting extra feild
         extra_fields = [key for key in data.keys() if key not in self.fields]
         if extra_fields:
@@ -32,21 +29,21 @@ class OrderItemSerializer(serializers.ModelSerializer):
             )
         return super().to_internal_value(data)
 
-    def to_representation(self, instance): 
+    def to_representation(self, instance):
 
         data = {
             #  No need order_Id since it will be present when getting info of whole order
             "OrderItemID": instance.id,  # Filtered from payload since auto_read by default
-            "Item":{
-                "item_id":instance.order_items.id,
+            "Item": {
+                "item_id": instance.order_items.id,
                 "item_name": instance.order_items.item_name,
                 "image": instance.order_items.item_picture.url,
-                "price": float(instance.order_items.price)
-                },
+                "price": float(instance.order_items.price),
+            },
             "quantity": instance.quantity,
             "special_note": instance.special_note,
         }
-        return data 
+        return data
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -56,10 +53,10 @@ class OrderSerializer(serializers.ModelSerializer):
     """
 
     Items = OrderItemSerializer(many=True, source="OrderItem")
+
     class Meta:
         model = Order
         fields = "__all__"
-        depth=1
 
     def to_internal_value(self, data):
         extra_fields = [key for key in data.keys() if key not in self.fields]
@@ -68,23 +65,26 @@ class OrderSerializer(serializers.ModelSerializer):
                 {field: "This field is not allowed." for field in extra_fields}
             )
         return super().to_internal_value(data)
-    
-    def  validate(self, attrs):
-        tabel_id=attrs["table"]
-        table=DiningTable.objects.get(id=tabel_id.id)
-        query_set=table.orderTable.filter(order_status='active')
-        if query_set:
-            raise serializers.ValidationError({'Table':'Table occupied'})
+
+    def validate(self, attrs):
+        print(f"[bold red]{attrs}[/bold red]")
         return attrs
-    
+
     def create(self, validated_data):
-        print(validated_data)
-        items = validated_data.pop("OrderItem", [])
-        print(items)
-        Orders = Order.objects.create(table=validated_data["table"],waiter=validated_data['waiter'])
-        for json in items:
-            Order_Items.objects.create(order_ins=Orders, **json)
-        return Orders
+        tabel_id = validated_data["table"]
+        table = DiningTable.objects.get(id=tabel_id.id)
+        query_set = table.orderTable.filter(order_status="active")
+        if query_set:
+            raise serializers.ValidationError({"Table": "Table occupied"})
+        else:
+            items = validated_data.pop("OrderItem", [])
+            print(items)
+            Orders = Order.objects.create(
+                table=validated_data["table"], waiter=validated_data["waiter"]
+            )
+            for json in items:
+                Order_Items.objects.create(order_ins=Orders, **json)
+            return Orders
 
     def update(self, instance, validated_data):
         OrderItems = validated_data.pop("OrderItem", [])

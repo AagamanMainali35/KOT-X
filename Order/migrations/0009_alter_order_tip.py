@@ -7,13 +7,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Order', '0008_alter_order_table'),
+        ("Order", "0008_alter_order_table"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='order',
-            name='Tip',
-            field=models.IntegerField(default=0, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(49)]),
+            model_name="order",
+            name="Tip",
+            field=models.IntegerField(
+                default=0,
+                validators=[
+                    django.core.validators.MinValueValidator(0),
+                    django.core.validators.MaxValueValidator(49),
+                ],
+            ),
         ),
     ]

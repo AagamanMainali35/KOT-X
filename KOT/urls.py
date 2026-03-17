@@ -31,7 +31,6 @@ urlpatterns = [
     path("Tables/", include("Tables.urls")),
     path("Order/", include("Order.urls")),
     path("Bill/", include("Billing.urls")),
-    
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

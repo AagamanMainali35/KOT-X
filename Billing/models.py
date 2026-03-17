@@ -1,7 +1,9 @@
 from django.db import models
+
 from Order.models import Order
 
-class Bill(models.Model):   
+
+class Bill(models.Model):
     Order_ins = models.OneToOneField(
         Order, on_delete=models.CASCADE, related_name="OrderObj"
     )
@@ -13,4 +15,3 @@ class Bill(models.Model):
 
     def __str__(self):
         return f"Bill for {self.Billed_to} - Rs . {self.Bill_Total}"
-    

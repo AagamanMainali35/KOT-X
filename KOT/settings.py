@@ -40,8 +40,8 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # ASGI application pathway
 
-ASGI_APPLICATION = 'KOT.asgi.application'
-WSGI_APPLICATION='KOT.wsgi.application'
+ASGI_APPLICATION = "KOT.asgi.application"
+WSGI_APPLICATION = "KOT.wsgi.application"
 
 # Project-level static folder (create this!)
 STATICFILES_DIRS = [
@@ -75,7 +75,7 @@ INSTALLED_APPS = [
     "Tables",
     "Order",
     "Billing",
-    'Livedata'
+    "Livedata",
 ]
 
 # Middleware components - processed in order for each request/response

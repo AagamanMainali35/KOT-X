@@ -1,14 +1,16 @@
+import json
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .models import DiningTable, Order, Order_Items
 from .serializer import OrderItemSerializer, OrderSerializer
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-import json
 
-channel_layer=get_channel_layer()
+channel_layer = get_channel_layer()
+
 
 @api_view(["GET"])
 def get_order(request, id):
@@ -52,14 +54,21 @@ def addItem(request):
         }
     )
 
+
 @api_view(["POST"])
 def create_Order(request):
-    print("from view")
     OrderData = OrderSerializer(data=request.data)
     OrderData.is_valid(raise_exception=True)
     OrderData.save()
-    return Response({"message": "Order Added", "status": status.HTTP_201_CREATED})    
-    
+    return Response(
+        {
+            "message": "Order Added",
+            "data": OrderData.data,
+            "status": status.HTTP_201_CREATED,
+        }
+    )
+
+
 @api_view(["PATCH"])
 def update_Order(request, pk):
     try:
@@ -68,12 +77,11 @@ def update_Order(request, pk):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         async_to_sync(channel_layer.group_send)(
-            f'order_{str(pk)}',
-            {
-                'type': 'update_order',
-                'data': serializer.data
-            }
+            f"order_{str(pk)}", {"type": "update_order", "data": serializer.data}
         )
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     except Order.DoesNotExist:
-        return Response({"id": f"OrderItem with ID {pk} does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"id": f"OrderItem with ID {pk} does not exist"},
+            status=status.HTTP_404_NOT_FOUND,
+        )

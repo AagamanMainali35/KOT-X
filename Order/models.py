@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
-from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 
 from Tables.models import DiningTable
 
@@ -20,12 +20,16 @@ class Order(models.Model):
     table = models.ForeignKey(
         DiningTable, on_delete=models.CASCADE, related_name="orderTable"
     )
-    waiter=models.ForeignKey(User,on_delete=models.CASCADE)
-    Tip=models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(49)], default=0)
-    order_status=models.CharField(choices=[
-        ('active','active'),
-        ('completed','completed')
-        ], max_length=50,default='active')
+    waiter = models.ForeignKey(User, on_delete=models.CASCADE)
+    Tip = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(49)], default=0
+    )
+    order_status = models.CharField(
+        choices=[("active", "active"), ("completed", "completed")],
+        max_length=50,
+        default="active",
+    )
+
     def __str__(self):
         return f"Order for Table {self.table.table_name} - {self.id}"
 
