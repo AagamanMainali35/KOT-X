@@ -129,8 +129,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Engine settings for the JWT framework
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.BasicAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
     ]
 }
 
@@ -160,3 +161,4 @@ CHANNEL_LAYERS = {
 
 TIME_ZONE = "Asia/Kathmandu"
 USE_TZ = True
+print(REDIS_URL)
