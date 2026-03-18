@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from .models import *
-
+from Tables.models import *
 
 class BillingSerializer(serializers.ModelSerializer):
     """
@@ -65,6 +65,8 @@ class BillingSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         oid = validated_data["Order_ins"]
+        oid.table.status='AVAILABLE'
+        oid.save()
         name = validated_data["Billed_to"]
         discount = int(validated_data["Discount"])
         vat = 13

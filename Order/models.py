@@ -15,7 +15,6 @@ class Menu(models.Model):
     def __str__(self):
         return self.item_name
 
-
 class Order(models.Model):
     table = models.ForeignKey(
         DiningTable, on_delete=models.CASCADE, related_name="orderTable"

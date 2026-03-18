@@ -13,6 +13,8 @@ DEBUG = True
 # Hosts/domains that can serve this Django application
 # NOTE: ['*'] means any host - NOT recommended for production!
 ALLOWED_HOSTS = ["*"]
+CORS_ALLOW_ALL_ORIGINS = True 
+# CORS_ALLOWED_ORIGIN=["*"]
 
 # Main URL configuration module
 ROOT_URLCONF = "KOT.urls"
@@ -74,6 +76,8 @@ INSTALLED_APPS = [
     "rest_framework",  # Django REST Framework
     "whitenoise",  # Whitenoise to serve static files
     "rest_framework_simplejwt",  # JWT app for DRF
+    "corsheaders", # for frontend calls
+    
     # Djnago Applications
     "Authentication",
     "Tables",
@@ -84,6 +88,7 @@ INSTALLED_APPS = [
 
 # Middleware components - processed in order for each request/response
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware", # cors header middle ware
     "django.middleware.security.SecurityMiddleware",  # Security enhancements
     "whitenoise.middleware.WhiteNoiseMiddleware",  # NOTE: Keep this Exactly here
     "django.contrib.sessions.middleware.SessionMiddleware",  # Session support

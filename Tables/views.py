@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes , authentication_classes
+from rest_framework.permissions import IsAuthenticated 
 from rest_framework.response import Response
 
 from decorator.role import role_required
@@ -11,7 +11,7 @@ from .serializer import TableSerializer
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def get_all_tables(request):
     tables = DiningTable.objects.all()
     serializer = TableSerializer(tables, many=True)
@@ -19,7 +19,7 @@ def get_all_tables(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def get_table_by_id(request, pk):
     try:
         table = DiningTable.objects.get(pk=pk)
@@ -30,7 +30,7 @@ def get_table_by_id(request, pk):
 
 
 @role_required(["manager", "owner"])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 @api_view(["PUT"])
 def update_table(request, pk):
     try:

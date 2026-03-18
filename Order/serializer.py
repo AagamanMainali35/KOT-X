@@ -1,12 +1,10 @@
 from rest_framework import serializers
-from rich import print
-
 from .models import DiningTable, Menu, Order, Order_Items
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
     """
-    Feilds: 👇
+    Feilds: 👇    
     order_ins=models.ForeignKey(Order,on_delete=models.CASCADE,related_name='OrderItem')
     order_items=models.ForeignKey(Menu,on_delete=models.CASCADE)
     quantity=models.IntegerField()
@@ -15,7 +13,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     OrderItemID = serializers.IntegerField(required=False)
     extra_kwargs = {"order_ins": {"required": False}}  # optional input
-
+    
     class Meta:
         model = Order_Items
         fields = "__all__"
@@ -51,7 +49,7 @@ class OrderSerializer(serializers.ModelSerializer):
     Feilds: 👇
     table = models.OneToOneField(DiningTable, on_delete=models.CASCADE, related_name='orderTable')
     """
-
+    
     Items = OrderItemSerializer(many=True, source="OrderItem")
 
     class Meta:
@@ -67,25 +65,25 @@ class OrderSerializer(serializers.ModelSerializer):
         return super().to_internal_value(data)
 
     def validate(self, attrs):
-        print(f"[bold red]{attrs}[/bold red]")
         return attrs
 
     def create(self, validated_data):
-        tabel_id = validated_data["table"]
-        table = DiningTable.objects.get(id=tabel_id.id)
+        table_id = validated_data["table"]
+        table = DiningTable.objects.get(id=table_id.id)
         query_set = table.orderTable.filter(order_status="active")
         if query_set:
             raise serializers.ValidationError({"Table": "Table occupied"})
         else:
+            table.status='OCCUPIED'
+            table.save()
             items = validated_data.pop("OrderItem", [])
-            print(items)
             Orders = Order.objects.create(
-                table=validated_data["table"], waiter=validated_data["waiter"]
+                table=table_id, waiter=validated_data["waiter"]
             )
             for json in items:
                 Order_Items.objects.create(order_ins=Orders, **json)
             return Orders
-
+    
     def update(self, instance, validated_data):
         OrderItems = validated_data.pop("OrderItem", [])
         setattr(instance, "table", validated_data["table"])

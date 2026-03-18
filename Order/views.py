@@ -16,7 +16,7 @@ channel_layer = get_channel_layer()
 def get_order(request, id):
     try:
         table = DiningTable.objects.get(id=id)
-        orders = table.orderTable
+        orders = table.orderTable.filter(order_status='active').first()
         serializer = OrderSerializer(orders)
         return Response(serializer.data)
     except Order.DoesNotExist:
