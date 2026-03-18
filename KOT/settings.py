@@ -38,6 +38,10 @@ STATIC_URL = "static/"
 # This is where files from all apps + STATICFILES_DIRS will be collected
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+#Default and fallback URL for redis
+REDIS_URL = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379")
+
+
 # ASGI application pathway
 
 ASGI_APPLICATION = "KOT.asgi.application"
@@ -149,7 +153,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [REDIS_URL],
         },
     },
 }
