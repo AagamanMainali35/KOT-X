@@ -33,6 +33,18 @@ def get_all_orders(request):
     return Response(serializer.data)
 
 
+@api_view(["PATCH"])
+def update_OrderItems(request,id):
+    try:
+        item=Order_Items.objects.get(id=id)
+        serializer=OrderItemSerializer(data=request.data,instance=item,partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+    except Order_Items.DoesNotExist as e :
+        return Response({"ID":"Invalid Item ID provided","status":status.HTTP_404_NOT_FOUND},status=status.HTTP_404_NOT_FOUND)
+
+
 @api_view(["GET"])
 def get_all_ordersItems(request):
     orders = Order_Items.objects.all()

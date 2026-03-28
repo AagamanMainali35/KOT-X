@@ -28,7 +28,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
         return super().to_internal_value(data)
 
     def to_representation(self, instance):
-
         data = {
             #  No need order_Id since it will be present when getting info of whole order
             "OrderItemID": instance.id,  # Filtered from payload since auto_read by default
@@ -74,7 +73,7 @@ class OrderSerializer(serializers.ModelSerializer):
         if query_set:
             raise serializers.ValidationError({"Table": "Table occupied"})
         else:
-            table.status='OCCUPIED'
+            table.status='occupied'
             table.save()
             items = validated_data.pop("OrderItem", [])
             Orders = Order.objects.create(
@@ -83,7 +82,7 @@ class OrderSerializer(serializers.ModelSerializer):
             for json in items:
                 Order_Items.objects.create(order_ins=Orders, **json)
             return Orders
-    
+
     def update(self, instance, validated_data):
         OrderItems = validated_data.pop("OrderItem", [])
         setattr(instance, "table", validated_data["table"])

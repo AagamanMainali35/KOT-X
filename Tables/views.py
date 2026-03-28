@@ -29,7 +29,7 @@ def get_table_by_id(request, pk):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@role_required(["manager", "owner"])
+# @role_required(["manager", "owner"])
 # @permission_classes([IsAuthenticated])
 @api_view(["PUT"])
 def update_table(request, pk):
@@ -45,8 +45,8 @@ def update_table(request, pk):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@role_required(["manager", "owner"])
-@permission_classes([IsAuthenticated])
+# @role_required(["manager", "owner"])
+# @permission_classes([IsAuthenticated])
 @api_view(["POST"])
 def create_table(request):
     table_name = request.data.get("table_name")
