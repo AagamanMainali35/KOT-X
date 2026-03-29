@@ -10,4 +10,6 @@ urlpatterns = [
     path("UpdateItem/<int:id>/", update_OrderItems),
     path("create/", create_Order),
     path("update/<str:pk>/", update_Order),
+    path('menus/', menu_list_create, name='menu-list-create'),
+    path('menus/<int:pk>/', menu_detail, name='menu-detail'),
 ]

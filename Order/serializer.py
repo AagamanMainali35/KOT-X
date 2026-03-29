@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from .models import DiningTable, Menu, Order, Order_Items
 
+class MenuSerializzer(serializers.ModelSerializer):
+    class Meta:
+        model = Menu
+        fields = "__all__"
 
 class OrderItemSerializer(serializers.ModelSerializer):
     """
