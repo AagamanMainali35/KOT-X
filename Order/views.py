@@ -44,7 +44,6 @@ def update_OrderItems(request,id):
     except Order_Items.DoesNotExist as e :
         return Response({"ID":"Invalid Item ID provided","status":status.HTTP_404_NOT_FOUND},status=status.HTTP_404_NOT_FOUND)
 
-
 @api_view(["GET"])
 def get_all_ordersItems(request):
     orders = Order_Items.objects.all()

@@ -6,11 +6,19 @@ from Tables.models import DiningTable
 
 
 class Menu(models.Model):
+    CATEGORY_CHOICES = [
+    ('Main Course', 'Main Course'),
+    ('Appetizer', 'Appetizer'),
+    ('Dessert', 'Dessert'),
+    ('Beverage', 'Beverage'),
+    ('Side', 'Side Dish'),
+]
     item_name = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     is_available = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     item_picture = models.ImageField(upload_to="menuItems/")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES,default='Main Course')
 
     def __str__(self):
         return self.item_name
