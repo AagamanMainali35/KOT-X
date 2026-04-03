@@ -20,7 +20,7 @@ def get_order(request, id):
         orders = table.orderTable.filter(order_status='active').first()
         serializer = OrderSerializer(orders)
         return Response(serializer.data)
-    except Order.DoesNotExist:
+    except (DiningTable.DoesNotExist, Order.DoesNotExist):
         return Response(
             {"data": f"Order not found", "status": status.HTTP_404_NOT_FOUND},
             status=status.HTTP_404_NOT_FOUND,
