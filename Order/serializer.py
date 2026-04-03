@@ -45,6 +45,23 @@ class OrderItemSerializer(serializers.ModelSerializer):
         }
         return data
     
+    def create(self, validated_data):
+        print(validated_data)
+        try:
+            obj=Order_Items.objects.filter(order_items=validated_data['order_items'],order_ins=validated_data['order_ins'])
+            print(obj)
+            if obj.exists():
+                obj=obj.first()
+                obj.quantity += validated_data['quantity']
+                obj.save()
+                print('data after validation')
+                print(validated_data)
+                return obj
+            else:
+                return super().create(validated_data)
+        except (KeyError) as e  :
+            raise serializers.ValidationError(e)
+    
 
 
 class OrderSerializer(serializers.ModelSerializer):
