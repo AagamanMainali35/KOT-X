@@ -21,7 +21,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order_Items
         fields = "__all__"
-        extra_kwargs = {"order_ins": {"read_only": True}}  # same effect
 
     def to_internal_value(self, data):  # For rejecting extra feild
         extra_fields = [key for key in data.keys() if key not in self.fields]
@@ -45,6 +44,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "special_note": instance.special_note,
         }
         return data
+    
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -89,7 +89,8 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         OrderItems = validated_data.pop("OrderItem", [])
-        setattr(instance, "table", validated_data["table"])
+        if 'table' in validated_data:
+             setattr(instance, "table", validated_data["table"])
         for itemsList in OrderItems:
             objID = itemsList.get("OrderItemID")
             try:

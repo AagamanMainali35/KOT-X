@@ -8,6 +8,7 @@ from rest_framework.response import Response
 
 from .models import DiningTable, Order, Order_Items , Menu
 from .serializer import OrderItemSerializer, OrderSerializer , MenuSerializzer
+from redis.exceptions import ConnectionError as RedisConnectionError
 
 channel_layer = get_channel_layer()
 
@@ -53,7 +54,7 @@ def get_all_ordersItems(request):
 
 @api_view(["POST"])
 def addItem(request):
-    print(request.data)
+    # print(request.data)
     serializer = OrderItemSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     serializer.save()
@@ -86,13 +87,16 @@ def update_Order(request, pk):
         serializer = OrderSerializer(order_data, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        async_to_sync(channel_layer.group_send)(
+        try:
+            async_to_sync(channel_layer.group_send)(
             f"order_{str(pk)}", {"type": "update_order", "data": serializer.data}
         )
+        except RedisConnectionError as e :
+            print("Redis connection failed:", e)
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     except Order.DoesNotExist:
         return Response(
-            {"id": f"OrderItem with ID {pk} does not exist"},
+            {"id": f"Order with ID {pk} does not exist"},
             status=status.HTTP_404_NOT_FOUND,
         )
 
