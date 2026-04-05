@@ -13,7 +13,7 @@ DEBUG = True
 # Hosts/domains that can serve this Django application
 # NOTE: ['*'] means any host - NOT recommended for production!
 ALLOWED_HOSTS = ["*"]
-CORS_ALLOW_ALL_ORIGINS = True 
+CORS_ALLOW_ALL_ORIGINS = True
 # CORS_ALLOWED_ORIGIN=["*"]
 
 # Main URL configuration module
@@ -40,7 +40,7 @@ STATIC_URL = "static/"
 # This is where files from all apps + STATICFILES_DIRS will be collected
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-#Default and fallback URL for redis
+# Default and fallback URL for redis
 REDIS_URL = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379")
 
 
@@ -76,8 +76,7 @@ INSTALLED_APPS = [
     "rest_framework",  # Django REST Framework
     "whitenoise",  # Whitenoise to serve static files
     "rest_framework_simplejwt",  # JWT app for DRF
-    "corsheaders", # for frontend calls
-    
+    "corsheaders",  # for frontend calls
     # Djnago Applications
     "Authentication",
     "Tables",
@@ -88,7 +87,7 @@ INSTALLED_APPS = [
 
 # Middleware components - processed in order for each request/response
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware", # cors header middle ware
+    "corsheaders.middleware.CorsMiddleware",  # cors header middle ware
     "django.middleware.security.SecurityMiddleware",  # Security enhancements
     "whitenoise.middleware.WhiteNoiseMiddleware",  # NOTE: Keep this Exactly here
     "django.contrib.sessions.middleware.SessionMiddleware",  # Session support
