@@ -6,13 +6,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Order', '0011_alter_order_waiter'),
+        ("Order", "0011_alter_order_waiter"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='menu',
-            name='category',
-            field=models.CharField(choices=[('Main Course', 'Main Course'), ('Appetizer', 'Appetizer'), ('Dessert', 'Dessert'), ('Beverage', 'Beverage'), ('Side', 'Side Dish')], default='Main Course', max_length=20),
+            model_name="menu",
+            name="category",
+            field=models.CharField(
+                choices=[
+                    ("Main Course", "Main Course"),
+                    ("Appetizer", "Appetizer"),
+                    ("Dessert", "Dessert"),
+                    ("Beverage", "Beverage"),
+                    ("Side", "Side Dish"),
+                ],
+                default="Main Course",
+                max_length=20,
+            ),
         ),
     ]

@@ -1,14 +1,16 @@
 from rest_framework import serializers
 from .models import DiningTable, Menu, Order, Order_Items
 
+
 class MenuSerializzer(serializers.ModelSerializer):
     class Meta:
         model = Menu
         fields = "__all__"
 
+
 class OrderItemSerializer(serializers.ModelSerializer):
     """
-    Feilds: 👇    
+    Feilds: 👇
     order_ins=models.ForeignKey(Order,on_delete=models.CASCADE,related_name='OrderItem')
     order_items=models.ForeignKey(Menu,on_delete=models.CASCADE)
     quantity=models.IntegerField()
@@ -17,7 +19,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     OrderItemID = serializers.IntegerField(required=False)
     extra_kwargs = {"order_ins": {"required": False}}  # optional input
-    
+
     class Meta:
         model = Order_Items
         fields = "__all__"
@@ -37,31 +39,32 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "Item": {
                 "item_id": instance.order_items.id,
                 "item_name": instance.order_items.item_name,
-                "image": instance.order_items.item_picture.url,
                 "price": float(instance.order_items.price),
             },
             "quantity": instance.quantity,
             "special_note": instance.special_note,
         }
         return data
-    
+
     def create(self, validated_data):
         print(validated_data)
         try:
-            obj=Order_Items.objects.filter(order_items=validated_data['order_items'],order_ins=validated_data['order_ins'])
+            obj = Order_Items.objects.filter(
+                order_items=validated_data["order_items"],
+                order_ins=validated_data["order_ins"],
+            )
             print(obj)
             if obj.exists():
-                obj=obj.first()
-                obj.quantity += validated_data['quantity']
+                obj = obj.first()
+                obj.quantity += validated_data["quantity"]
                 obj.save()
-                print('data after validation')
+                print("data after validation")
                 print(validated_data)
                 return obj
             else:
                 return super().create(validated_data)
-        except (KeyError) as e  :
+        except KeyError as e:
             raise serializers.ValidationError(e)
-    
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -69,7 +72,7 @@ class OrderSerializer(serializers.ModelSerializer):
     Feilds: 👇
     table = models.OneToOneField(DiningTable, on_delete=models.CASCADE, related_name='orderTable')
     """
-    
+
     Items = OrderItemSerializer(many=True, source="OrderItem")
 
     class Meta:
@@ -94,7 +97,7 @@ class OrderSerializer(serializers.ModelSerializer):
         if query_set:
             raise serializers.ValidationError({"Table": "Table occupied"})
         else:
-            table.status='occupied'
+            table.status = "occupied"
             table.save()
             items = validated_data.pop("OrderItem", [])
             Orders = Order.objects.create(
@@ -106,8 +109,8 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         OrderItems = validated_data.pop("OrderItem", [])
-        if 'table' in validated_data:
-             setattr(instance, "table", validated_data["table"])
+        if "table" in validated_data:
+            setattr(instance, "table", validated_data["table"])
         for itemsList in OrderItems:
             objID = itemsList.get("OrderItemID")
             try:
@@ -121,7 +124,7 @@ class OrderSerializer(serializers.ModelSerializer):
                         "special_note": itemsList.get("special_note"),
                     },
                 )
-                serializer.is_valid(raise_exception=True)  # validate the data
+                serializer.is_valid(raise_exception=True)  
                 serializer.save()
             except Order_Items.DoesNotExist:
                 raise serializers.ValidationError(

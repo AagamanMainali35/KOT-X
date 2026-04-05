@@ -1,27 +1,29 @@
+from django.utils import timezone
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-
 from Tables.models import DiningTable
 
 
 class Menu(models.Model):
     CATEGORY_CHOICES = [
-    ('Main Course', 'Main Course'),
-    ('Appetizer', 'Appetizer'),
-    ('Dessert', 'Dessert'),
-    ('Beverage', 'Beverage'),
-    ('Side', 'Side Dish'),
-]
+        ("Main Course", "Main Course"),
+        ("Appetizer", "Appetizer"),
+        ("Dessert", "Dessert"),
+        ("Beverage", "Beverage"),
+        ("Side", "Side Dish"),
+    ]
     item_name = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     is_available = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    item_picture = models.ImageField(upload_to="menuItems/")
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES,default='Main Course')
+    category = models.CharField(
+        max_length=20, choices=CATEGORY_CHOICES, default="Main Course"
+    )
 
     def __str__(self):
         return self.item_name
+
 
 class Order(models.Model):
     table = models.ForeignKey(
@@ -36,12 +38,14 @@ class Order(models.Model):
         max_length=50,
         default="active",
     )
+    created_at = models.DateTimeField(auto_now_add=True)
+
 
     def __str__(self):
         return f"Order for Table {self.table.table_name} - {self.id}"
 
 
-class Order_Items(models.Model):  # Bridging Table for Order and Menu_Items
+class Order_Items(models.Model):
     order_ins = models.ForeignKey(
         Order, on_delete=models.CASCADE, related_name="OrderItem"
     )
