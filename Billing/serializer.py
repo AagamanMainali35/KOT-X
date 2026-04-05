@@ -2,6 +2,9 @@ from rest_framework import serializers
 
 from .models import *
 from Tables.models import *
+from django.utils import timezone
+from Order.serializer import OrderSerializer
+
 
 class BillingSerializer(serializers.ModelSerializer):
     """
@@ -29,28 +32,36 @@ class BillingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Bill
-        fields = ["Order_id", "Name", "Discount", "Bill_Total", "Billing_Date", "VAT"]
-        read_only_fields = ["Bill_Total", "Billing_Date", "VAT"]
+        fields = ["Order_id", "Name", "Discount","VAT"]
 
     def to_internal_value(self, data):
-        extra_feilds = [key for key in data.keys() if key not in self.fields]
-        if extra_feilds:
-            raise serializers.ValidationError(
-                {feild: "This field is not allowed." for feild in extra_feilds}
-            )
+        extra_fields = [key for key in data.keys() if key not in self.fields]
+        missing_fields = [key for key in self.fields if key not in data.keys()]
+        
+        if extra_fields:
+            raise serializers.ValidationError({
+                field: f"'{field}' is not a permitted field for this resource." 
+                for field in extra_fields
+            })
+        
+        if missing_fields:
+            raise serializers.ValidationError({
+                field: f"'{field}' is required but was not provided in the request payload."
+                for field in missing_fields
+            })
+    
         return super().to_internal_value(data)
-
+    
     def to_representation(self, instance):
         """Convert string values to integers/decimals in the output"""
         data = {
-            "Order_id": instance.Order_ins.id,
+            "Order_id": OrderSerializer(instance.Order_ins).data,
             "Name": instance.Billed_to,
             "Discount": float(instance.Discount),
             "Bill_Total": float(instance.Bill_Total),
+            "Subtotal": float(instance.subtotal),
             "VAT": float(instance.VAT),
             "Billing_Date": instance.Billing_Date.strftime("%d/%m/%Y %H:%M"),
-            "discount_percentage": float(instance.Discount),
-            "discounted_value": float(instance.Bill_Total),
         }
         return data
 
@@ -64,31 +75,39 @@ class BillingSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        oid = validated_data["Order_ins"]
-        oid.table.status='AVAILABLE'
-        oid.save()
-        name = validated_data["Billed_to"]
+        print(validated_data)
+        Order_instance = validated_data["Order_ins"]
+        Order_instance.table.status = "available"
+        Order_instance.order_status = "completed"
+        Order_instance.table.save()
+        Order_instance.save()
         discount = int(validated_data["Discount"])
-        vat = 13
+        vat = int(validated_data["VAT"])
         subtotal = 0
-        total = 0
-        items = oid.OrderItem.all()
-        if items:
-            for item in items:
-                print(
-                    f"{item.order_items.price}x{item.quantity}={item.order_items.price*item.quantity}"
-                )
-                subtotal += item.order_items.price * item.quantity
+        items = Order_instance.OrderItem.all()
 
+        if items:
+            # Calculate subtotal from items
+            for item in items:
+                subtotal += item.order_items.price * item.quantity
+            
+            # Apply discount if any
             if discount > 0:
                 discountAmount = (subtotal * discount) / 100
-                subtotal -= discountAmount
-                subtotal += (subtotal * vat) / 100
-        # NOTE: Append to total not subtotal after adding subtotal feild in DB
+                after_discount = subtotal - discountAmount
+            else:
+                discountAmount = 0
+                after_discount = subtotal
+            
+            # Apply VAT on the discounted amount
+            Total = after_discount + (after_discount * vat) / 100
         else:
             raise serializers.ValidationError("No Items Ordered yet")
-
-        Bill_obj = Bill.objects.create(
-            Order_ins=oid, Billed_to=name, VAT=vat, Discount=discount, Bill_Total=total
-        )
+        data={
+            "Bill_Total":Total,
+            "subtotal":subtotal,
+            "VAT":vat
+        }
+        validated_data.update(data)
+        Bill_obj = Bill.objects.create(**validated_data)
         return Bill_obj
