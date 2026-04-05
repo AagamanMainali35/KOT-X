@@ -36,7 +36,8 @@ class OrderConsumer(WebsocketConsumer):
                 self.orderGroup, self.channel_name
             )
             self.accept()
-            self.send_preloaded_data()
+            self.send("Connection Initiated")
+            # self.send_preloaded_data()
         except Order.DoesNotExist:
             self.accept()
             self.close(code=CloseCodes.ORDER_NOT_FOUND, reason="Invalid Id provided")
