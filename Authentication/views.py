@@ -12,7 +12,7 @@ from .models import UserProfile
 from .serializer import AuthSerializer, ProfileSerializer, UserSerializer
 
 
-@api_view(["GET"])
+@api_view(["GET", "HEAD"])
 def home(request):
     return Response({"msg": "OK and running"})
 
