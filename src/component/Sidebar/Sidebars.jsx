@@ -15,11 +15,11 @@ const Sidebar = ({ activeView, userRole }) => {
 
   // Admin section menu items
   const adminMenuItems = [
-    { id: 'admin', label: 'Admin ', icon: Shield, path: '/admin' },
-    { id: 'users', label: 'Manage Users', icon: Users, path: '/Billing' },
-    { id: 'admin-tables', label: 'Table Management', icon: Table2, path: '/admin/tables' },
+    { id: 'admin', label: 'Admin ', icon: Shield, path: '/admin' }, 
+    // { id: 'users', label: 'Manage Users', icon: Users, path: '/Billing' },
+    { id: 'admin-tables', label: 'Table Management', icon: Table2, path: '/admin/table' },
     { id: 'admin-menu', label: 'Menu Management', icon: UtensilsCrossed, path: '/admin/menu' },
-    { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
+    // { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
   ];
 
   const handleQuit = () => {
