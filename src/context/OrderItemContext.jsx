@@ -35,6 +35,51 @@ export const OrderProvider = ({ children }) => {
     }
   }, [errorMessage]);
 
+const createOrder = async (tableId, firstMenuItem = null) => {
+  const itemsArray = firstMenuItem ? [
+    {
+      order_items: firstMenuItem.id,
+      quantity: 1,
+      special_note: ""
+    }
+  ] : [];
+
+  const body = {
+    table: tableId,
+    waiter: 1,
+    Items: itemsArray
+  };
+
+  try {
+    const res = await axios.post(`${Backend}Order/create/`, body);
+    const data = res.data?.data;
+
+    if (!data) return null;
+
+    const parsedItems = (data.Items || []).map(item => ({
+      OrderItemID: item.OrderItemID,
+      Item: {
+        item_id: item.Item.item_id,
+        item_name: item.Item.item_name,
+        price: Number(item.Item.price),
+        image: item.Item.image || ""
+      },
+      quantity: item.quantity,
+      special_note: item.special_note,
+      isTemp: false
+    }));
+
+    setOrderId(data.id);
+    setOrderItems(parsedItems);
+
+    return data.id;
+
+  } catch (err) {
+    setErrorMessage("Failed to create order");
+    return null;
+  }
+};
+
   const addItem = (orderId, menuItemId, quantity, specialNote = "") => {
     const body = {
       order_ins: orderId,
@@ -169,6 +214,7 @@ export const OrderProvider = ({ children }) => {
         removeItem,
         clearOrder,
         errorMessage,
+        createOrder
       }}
     >
       {children}
