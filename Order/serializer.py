@@ -18,11 +18,11 @@ class OrderItemSerializer(serializers.ModelSerializer):
     """
 
     OrderItemID = serializers.IntegerField(required=False)
-    extra_kwargs = {"order_ins": {"required": False}}  # optional input
 
     class Meta:
         model = Order_Items
         fields = "__all__"
+        extra_kwargs = {"order_ins": {"required": False}}  
 
     def to_internal_value(self, data):  # For rejecting extra feild
         extra_fields = [key for key in data.keys() if key not in self.fields]
