@@ -11,4 +11,5 @@ urlpatterns = [
         "update/<int:pk>/", views.update_table, name="update_table"
     ),  # PUT update table by ID
     path("create/", views.create_table, name="create_table"),  # POST create new table
+    path("delete/<int:pk>/", views.delete_table, name="create_table"),  # POST create new table
 ]

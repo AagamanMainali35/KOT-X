@@ -49,8 +49,7 @@ def update_table(request, pk):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# @role_required(["manager", "owner"])
-# @permission_classes([IsAuthenticated])
+
 @api_view(["POST"])
 def create_table(request):
     table_name = request.data.get("table_name")
@@ -66,3 +65,25 @@ def create_table(request):
         {"table": serializer.data, "created": created},
         status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
     )
+
+
+@api_view(["DELETE"])
+def delete_table(request, pk):
+    try:
+        table = DiningTable.objects.get(pk=pk)
+        table.delete()
+        return Response(
+            {
+                "status": "success",
+                "message": f"Table {pk} deleted successfully",
+            },
+            status=status.HTTP_200_OK,
+        )
+    except DiningTable.DoesNotExist:
+        return Response(
+            {
+                "status": "error",
+                "message": f"Object with id {pk} not found",
+            },
+            status=status.HTTP_404_NOT_FOUND,
+        )
