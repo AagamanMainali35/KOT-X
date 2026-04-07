@@ -58,7 +58,6 @@ def get_all_ordersItems(request):
 
 @api_view(["POST"])
 def addItem(request):
-    # print(request.data)
     serializer = OrderItemSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     serializer.save()
@@ -140,13 +139,11 @@ def update_Order(request, pk):
         )
 
 
-# List all menu items or create a new one
 @api_view(["GET", "POST"])
 def menu_list_create(request):
     if request.method == "GET":
         menus = Menu.objects.all()
         serializer = MenuSerializzer(menus, many=True)
-        print(serializer.data)
         return Response(serializer.data)
 
     elif request.method == "POST":
@@ -157,7 +154,7 @@ def menu_list_create(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(["GET", "PUT", "DELETE"])
+@api_view(["GET", "PATCH", "DELETE"])
 def menu_detail(request, pk):
     try:
         menu = Menu.objects.get(pk=pk)
