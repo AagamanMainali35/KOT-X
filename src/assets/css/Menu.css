@@ -851,7 +851,7 @@
 .row-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 20px;
   flex-shrink: 0;
 }
 .row-price {
@@ -1093,4 +1093,23 @@
     right: -16px;
     width: calc(100vw - 32px);
   }
+}
+
+
+.row-stepper button:disabled,
+.row-stepper button.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-color: #e5e7eb;
+  color: #9ca3af;
+  transform: none;
+}
+.cpr-btn:disabled,
+.cpr-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  /* background-color: #f3f4f6;
+  color: #d1d5db; */
+  transform: none;
+  /* pointer-events: none; */ /* REMOVE THIS */
 }
