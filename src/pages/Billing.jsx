@@ -10,13 +10,12 @@ import { useTables } from "../context/TablesContext";
 import { useOrder } from "../context/OrderItemContext";
 import { useNavigate } from 'react-router-dom';
 
-
 export default function Billing() {
   const Backend = import.meta.env.VITE_BACKEND;
   const [activeView, setActiveView] = useState("billing");
 
   const { tables, selectedTable, setSelectedTable } = useTables();
-  const { orderItems, clearOrder, errorMessage: contextErrorMessage , orderId } = useOrder();
+  const { orderItems, clearOrder, errorMessage: contextErrorMessage, orderId } = useOrder();
 
   // Form state
   const [billedTo, setBilledTo] = useState("");
@@ -28,6 +27,8 @@ export default function Billing() {
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const navigate = useNavigate();
 
   // Handle nested Item structure in calculations
   const subtotal = orderItems.reduce((s, i) => {
@@ -45,8 +46,8 @@ export default function Billing() {
     console.log('🪑 selectedTable:', selectedTable);
   }, [orderItems, selectedTable]);
 
- // Handle checkout - API call here
-const handleCheckout = async () => {
+  // Handle checkout - API call here
+  const handleCheckout = async () => {
   if (!selectedTable?.id) {
     setError("Please select a table first.");
     return;
@@ -64,57 +65,18 @@ const handleCheckout = async () => {
   setIsSubmitting(true);
 
   try {
-
-    // const payload = {
-    //   Order_id: orderId, // You need to get orderId from context
-    //   Name: billedTo,
-    //   Discount: discount.toString(),
-    //   VAT: vat.toString()
-    // };
-        
-    // // Make the API call to create bill
-    // const response = await axios.post(`${Backend}Bill/create-bill/`, payload);
-    
-    // console.log('✅ Bill created successfully:', response.data);
-    
-    // // The response data structure you showed
-    // const billData = response.data;
-    
-    const mockResponse = {
-      data: {
-        Order_id: {
-          id: orderId || 13,
-          Items: orderItems.map(item => ({
-            OrderItemID: item.OrderItemID,
-            Item: {
-              item_id: item.Item?.item_id,
-              item_name: item.Item?.item_name,
-              price: item.Item?.price
-            },
-            quantity: item.quantity,
-            special_note: item.special_note || null
-          })),
-          Tip: 0,
-          order_status: "completed",
-          table: selectedTable.id,
-          waiter: 2
-        },
-        Name: billedTo,
-        Discount: parseFloat(discount),
-        Bill_Total: parseFloat(total.toFixed(2)),
-        Subtotal: parseFloat(subtotal.toFixed(2)),
-        VAT: parseFloat(vat),
-        Billing_Date: new Date().toLocaleString()
-      },
-      message: "Bill created successfully",
-      status: 201
+    const payload = {
+      Order_id: orderId,
+      Name: billedTo,
+      Discount: discount.toString(),
+      VAT: vat.toString()
     };
-    
-    console.log('✅ Mock bill created:', mockResponse);
-    
-    // Use mock response data
-    const billData = mockResponse.data;
-    
+
+    const response = await axios.post(`${Backend}Bill/create-bill/`, payload);
+
+    const billData = response.data;
+
+    // ✅ SUCCESS STATE
     setSuccess({
       Billed_to: billData.Name || billedTo,
       VAT: billData.VAT || vat,
@@ -122,44 +84,68 @@ const handleCheckout = async () => {
       Bill_Total: billData.Bill_Total || total.toFixed(2),
       Billing_Date: billData.Billing_Date || new Date().toISOString(),
       orderItems: [...orderItems],
-      billDetails: billData // Store full response for reference
+      billDetails: billData
     });
-    
-    // clearOrder(); // Clear order after successful submission
+
+    // ✅ IMPORTANT: update context ONLY (no extra API call)
+    setSelectedTable(prev =>
+      prev ? { ...prev, status: "available" } : null
+    );
+
+    // ✅ ALSO update tables list (this is critical)
+    if (tables && tables.length > 0) {
+      const updatedTables = tables.map(t =>
+        t.id === selectedTable.id
+          ? { ...t, status: "available" }
+          : t
+      );
+
+      // ⚠️ only if your context exposes this
+      if (typeof setTables === "function") {
+        setTables(updatedTables);
+      }
+    }
+
+    // ✅ clear order AFTER success snapshot
+    clearOrder();
+
+    // reset form
     setBilledTo("");
     setDiscount(0);
     setVat(13);
-    
+
   } catch (err) {
     console.error('❌ Bill submission error:', err);
-    console.error('Error response:', err.response?.data);
-    console.error('Error status:', err.response?.status);
-    
-    const errorMsg = err.response?.data?.message || 
-                     err.response?.data?.error ||
-                     err.message || 
-                     "Failed to generate bill. Please try again.";
+
+    const errorMsg =
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      err.message ||
+      "Failed to generate bill. Please try again.";
+
     setError(errorMsg);
+
   } finally {
     setIsSubmitting(false);
   }
 };
 
- const handlePrint = () => {
-  const printDialogClosed = () => {
-    navigate('/');
+  const handlePrint = () => {
+    const printDialogClosed = () => {
+      navigate('/');
+    };
+    
+    // Listen for print media query changes
+    const mediaQueryList = window.matchMedia('print');
+    mediaQueryList.addEventListener('change', (mql) => {
+      if (!mql.matches) {
+        printDialogClosed();
+      }
+    });
+    
+    window.print();
   };
-  
-  // Listen for print media query changes
-  const mediaQueryList = window.matchMedia('print');
-  mediaQueryList.addEventListener('change', (mql) => {
-    if (!mql.matches) {
-      printDialogClosed();
-    }
-  });
-  
-  window.print();
-};
+
   const resetBill = () => {
     setSuccess(null);
     setError(null);
@@ -167,6 +153,7 @@ const handleCheckout = async () => {
     setDiscount(0);
     setVat(13);
     setSelectedTable(null);
+    window.location.href="/"
   };
 
   const occupiedTables = (tables || []).filter((t) => t.status === "occupied");
@@ -176,94 +163,93 @@ const handleCheckout = async () => {
   const getItemPrice = (item) => item.Item?.price || item.price || 0;
   const getItemQuantity = (item) => item.quantity || 0;
 
-  // Success View
   // Success View - Full page without sidebar
-if (success) {
-  const receiptItems = success.orderItems || orderItems;
-  
-  return (
-    <div className="bill-full-page">
-      <div className="bill-receipt full-page-receipt" id="printable-receipt">
-        <div className="receipt-header">
-          <div className="receipt-check">
-            <CheckCircle size={40} color="#22c55e" />
-          </div>
-          <h2 className="receipt-title">Bill Generated</h2>
-          <p className="receipt-subtitle">Payment successful</p>
-        </div>
-
-        <div className="receipt-divider" />
-
-        <div className="receipt-meta">
-          <div className="receipt-meta-row">
-            <span className="rml">Billed To</span>
-            <span className="rmr">{success.Billed_to}</span>
-          </div>
-          <div className="receipt-meta-row">
-            <span className="rml">Table</span>
-            <span className="rmr">{selectedTable?.table_name || "—"}</span>
-          </div>
-          <div className="receipt-meta-row">
-            <span className="rml">Date</span>
-            <span className="rmr">
-              {new Date(success.Billing_Date || Date.now()).toLocaleString()}
-            </span>
-          </div>
-        </div>
-
-        <div className="receipt-divider dashed" />
-
-        <div className="receipt-items">
-          {receiptItems.length > 0 ? (
-            receiptItems.map((item, idx) => (
-              <div className="receipt-item-row" key={item.OrderItemID || item.id || idx}>
-                <span className="ri-name">{getItemName(item)}</span>
-                <span className="ri-qty">×{getItemQuantity(item)}</span>
-                <span className="ri-price">
-                  Rs. {(Number(getItemPrice(item)) * getItemQuantity(item)).toFixed(2)}
-                </span>
-              </div>
-            ))
-          ) : (
-            <p className="receipt-no-items">Items cleared from context.</p>
-          )}
-        </div>
-
-        <div className="receipt-divider dashed" />
-
-        <div className="receipt-totals">
-          <div className="receipt-total-row">
-            <span>Subtotal</span>
-            <span>Rs. {subtotal.toFixed(2)}</span>
-          </div>
-          <div className="receipt-total-row">
-            <span>VAT ({success.VAT}%)</span>
-            <span>Rs. {(subtotal * (Number(success.VAT) / 100)).toFixed(2)}</span>
-          </div>
-          {Number(success.Discount) > 0 && (
-            <div className="receipt-total-row discount">
-              <span>Discount ({success.Discount}%)</span>
-              <span>- Rs. {(subtotal * (Number(success.Discount) / 100)).toFixed(2)}</span>
+  if (success) {
+    const receiptItems = success.orderItems || orderItems;
+    
+    return (
+      <div className="bill-full-page">
+        <div className="bill-receipt full-page-receipt" id="printable-receipt">
+          <div className="receipt-header">
+            <div className="receipt-check">
+              <CheckCircle size={40} color="#22c55e" />
             </div>
-          )}
-          <div className="receipt-total-row grand-total">
-            <span>Total</span>
-            <span>Rs. {Number(success.Bill_Total).toFixed(2)}</span>
+            <h2 className="receipt-title">Bill Generated</h2>
+            <p className="receipt-subtitle">Payment successful</p>
+          </div>
+
+          <div className="receipt-divider" />
+
+          <div className="receipt-meta">
+            <div className="receipt-meta-row">
+              <span className="rml">Billed To</span>
+              <span className="rmr">{success.Billed_to}</span>
+            </div>
+            <div className="receipt-meta-row">
+              <span className="rml">Table</span>
+              <span className="rmr">{selectedTable?.table_name || "—"}</span>
+            </div>
+            <div className="receipt-meta-row">
+              <span className="rml">Date</span>
+              <span className="rmr">
+                {new Date(success.Billing_Date || Date.now()).toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          <div className="receipt-divider dashed" />
+
+          <div className="receipt-items">
+            {receiptItems.length > 0 ? (
+              receiptItems.map((item, idx) => (
+                <div className="receipt-item-row" key={item.OrderItemID || item.id || idx}>
+                  <span className="ri-name">{getItemName(item)}</span>
+                  <span className="ri-qty">×{getItemQuantity(item)}</span>
+                  <span className="ri-price">
+                    Rs. {(Number(getItemPrice(item)) * getItemQuantity(item)).toFixed(2)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="receipt-no-items">Items cleared from context.</p>
+            )}
+          </div>
+
+          <div className="receipt-divider dashed" />
+
+          <div className="receipt-totals">
+            <div className="receipt-total-row">
+              <span>Subtotal</span>
+              <span>Rs. {subtotal.toFixed(2)}</span>
+            </div>
+            <div className="receipt-total-row">
+              <span>VAT ({success.VAT}%)</span>
+              <span>Rs. {(subtotal * (Number(success.VAT) / 100)).toFixed(2)}</span>
+            </div>
+            {Number(success.Discount) > 0 && (
+              <div className="receipt-total-row discount">
+                <span>Discount ({success.Discount}%)</span>
+                <span>- Rs. {(subtotal * (Number(success.Discount) / 100)).toFixed(2)}</span>
+              </div>
+            )}
+            <div className="receipt-total-row grand-total">
+              <span>Total</span>
+              <span>Rs. {Number(success.Bill_Total).toFixed(2)}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="bill-actions no-print">
-        <button className="quick-action-btn" onClick={handlePrint}>
-          <Printer size={16} /> Print Receipt
-        </button>
-        <button className="submit-button" onClick={resetBill}>
-          New Bill
-        </button>
+        <div className="bill-actions no-print">
+          <button className="quick-action-btn" onClick={handlePrint}>
+            <Printer size={16} /> Print Receipt
+          </button>
+          <button className="submit-button" onClick={resetBill}>
+            New Bill
+          </button>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   // Main Billing View
   return (

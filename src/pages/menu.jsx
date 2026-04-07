@@ -10,6 +10,7 @@ import { useTables } from "../context/TablesContext";
 import { useOrder } from "../context/OrderItemContext";
 import { useMenu } from "../context/MenuContext";
 
+
 const CATEGORIES = ["All", "Appetizer", "Main Course", "Side", "Dessert", "Beverage"];
 const CAT_META = {
   All:           { icon: <UtensilsCrossed size={16} />, color: "#2563eb" },
@@ -17,7 +18,6 @@ const CAT_META = {
   "Main Course": { icon: <Beef size={16} />,            color: "#ef4444" },
   Side:         { icon: <Soup size={16} />,            color: "#22c55e" },
   Dessert:      { icon: <CakeSlice size={16} />,       color: "#ec4899" },
-  Beverage:      { icon: <Coffee size={16} />,          color: "#8b5cf6" },
   Beverage:      { icon: <Coffee size={16} />,          color: "#8b5cf6" },
 };
 
@@ -28,226 +28,180 @@ export default function Menu() {
   const [cartOpen, setCartOpen]     = useState(false);
   const [flashId, setFlashId]       = useState(null);
   const [pendingAdds, setPendingAdds] = useState({});
-
-  const { selectedTable } = useTables();
-  const { orderItems, setOrderItems, addItem, removeItem, updateQuantity, orderId, errorMessage } = useOrder();
-  const { menuItems, loading, error } = useMenu();
-
+  const [creatingOrder, setCreatingOrder] = useState(false);
   const searchRef = useRef(null);
   const cartRef   = useRef(null);
-  
-  // Track pending requests to prevent race conditions
-  const pendingRequests = useRef(new Map());
-  const requestCounter = useRef(0);
+  const { menuItems, loading, error } = useMenu();
+  const { selectedTable } = useTables();
 
-  // Transform menu items for display
+  const { 
+    orderItems, 
+    setOrderItems, 
+    updateQuantity, 
+    removeItem, 
+    orderId, 
+    errorMessage, 
+    createOrder 
+  } = useOrder();
+
+
+
   const displayMenuItems = useMemo(() => {
     if (!menuItems) return [];
     return menuItems.map((item) => ({
-      id:          item.id,
-      name:        item.item_name,
-      price:       Number(item.price),
-      category:    item.category,
-      image:       item.item_picture || "",
-      prepTime:    10,
+      id: item.id,
+      name: item.item_name,
+      price: Number(item.price),
+      category: item.category,
+      image: item.item_picture || "",
+      prepTime: 10,
       isAvailable: item.is_available,
     }));
   }, [menuItems]);
 
-  useEffect(() => {
-    if (!cartOpen) return;
-    const handler = (e) => {
-      if (cartRef.current && !cartRef.current.contains(e.target)) {
-        setCartOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [cartOpen]);
-
-  // Helper functions
   const getQuantity = (menuItemId) => {
     const orderItem = orderItems.find(item => item.Item?.item_id === menuItemId);
     return orderItem?.quantity ?? 0;
   };
 
-  const cartCount = orderItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
-  const cartTotal = orderItems.reduce((sum, item) => sum + (Number(item.Item?.price || 0) * (item.quantity || 0)), 0);
+  const getCategoryCount = (cat) =>
+    cat === "All" ? displayMenuItems.length : displayMenuItems.filter((i) => i.category === cat).length;
+
 
   const handleAddItem = async (menuItem) => {
-    if (pendingAdds[menuItem.id]) return;
-    
-    const existingItem = orderItems.find(item => item.Item?.item_id === menuItem.id);
-    
+    if (pendingAdds[menuItem.id] || creatingOrder) return;
+
+    const validMenuItem = {
+      ...menuItem,
+      price: Number(menuItem.price) || 0
+    };
+
+    if (!orderId) {
+      setCreatingOrder(true);
+      const newOrderId = await createOrder(selectedTable.id, validMenuItem);
+      setCreatingOrder(false);
+
+      if (newOrderId) {
+        setFlashId(validMenuItem.id);
+        setTimeout(() => setFlashId(null), 800);
+      }
+      return;
+    }
+
+    const existingItem = orderItems.find(item => item.Item?.item_id === validMenuItem.id);
+
     if (existingItem) {
-      // Item exists - just update quantity
       const newQuantity = existingItem.quantity + 1;
-      const updatedItems = orderItems.map(item =>
-        item.OrderItemID === existingItem.OrderItemID
-          ? { ...item, quantity: newQuantity }
-          : item
+
+      setOrderItems(prev =>
+        prev.map(item =>
+          item.OrderItemID === existingItem.OrderItemID
+            ? { ...item, quantity: newQuantity }
+            : item
+        )
       );
-      setOrderItems(updatedItems);
-      updateQuantityWithTracking(orderId, existingItem.OrderItemID, menuItem.id, newQuantity);
+
+      updateQuantity(orderId, existingItem.OrderItemID, validMenuItem.id, newQuantity);
+
     } else {
-      // New item - add with optimistic update
-      setPendingAdds(prev => ({ ...prev, [menuItem.id]: true }));
-      
+      setPendingAdds(prev => ({ ...prev, [validMenuItem.id]: true }));
+
       const tempId = Date.now();
+
       const tempOrderItem = {
         OrderItemID: tempId,
         Item: {
-          item_id: menuItem.id,
-          item_name: menuItem.name,
-          image: menuItem.image,
-          price: menuItem.price
+          item_id: validMenuItem.id,
+          item_name: validMenuItem.name,
+          image: validMenuItem.image,
+          price: validMenuItem.price
         },
         quantity: 1,
         special_note: "",
         isTemp: true
       };
+
       setOrderItems(prev => [...prev, tempOrderItem]);
-      
-      // Make API call
-      const body = {
-        order_ins: orderId,
-        order_items: menuItem.id,
-        quantity: 1,
-        special_note: ""
-      };
-      
+
       try {
         const response = await fetch(`${import.meta.env.VITE_BACKEND}Order/AddItem/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
+          body: JSON.stringify({
+            order_ins: orderId,
+            order_items: validMenuItem.id,
+            quantity: 1,
+            special_note: ""
+          })
         });
-        
+
         const result = await response.json();
-        console.log("Add item response:", result);
-        
+
         if (result.status === 201 && result.data) {
-          // Replace temp item with real item from response
           const realOrderItem = {
             OrderItemID: result.data.OrderItemID,
-            Item: result.data.Item,
+            Item: {
+              item_id: result.data.Item?.item_id,
+              item_name: result.data.Item?.item_name,
+              price: Number(result.data.Item?.price || 0),
+              image: result.data.Item?.image || ""
+            },
             quantity: result.data.quantity,
             special_note: result.data.special_note,
             isTemp: false
           };
-          
-          setOrderItems(prev => 
-            prev.map(item => 
+
+          setOrderItems(prev =>
+            prev.map(item =>
               item.OrderItemID === tempId ? realOrderItem : item
             )
           );
         } else {
-          // If something went wrong, remove the temp item
           setOrderItems(prev => prev.filter(item => item.OrderItemID !== tempId));
-          console.error("Failed to add item:", result);
         }
       } catch (err) {
-        console.error("Error adding item:", err);
         setOrderItems(prev => prev.filter(item => item.OrderItemID !== tempId));
       } finally {
-        setPendingAdds(prev => ({ ...prev, [menuItem.id]: false }));
+        setPendingAdds(prev => ({ ...prev, [validMenuItem.id]: false }));
       }
     }
-    
-    setFlashId(menuItem.id);
+
+    setFlashId(validMenuItem.id);
     setTimeout(() => setFlashId(null), 800);
   };
 
   const handleDecrementItem = (menuItemId) => {
     const existingItem = orderItems.find(item => item.Item?.item_id === menuItemId);
-    
-    if (existingItem) {
-      // Don't allow decrement if it's a temp item
-      if (existingItem.isTemp) {
-        console.log("Cannot update temp item, waiting for real ID");
-        return;
-      }
-      
-      if (existingItem.quantity > 1) {
-        const newQuantity = existingItem.quantity - 1;
-        const updatedItems = orderItems.map(item =>
+
+    if (!existingItem || existingItem.isTemp) return;
+
+    // Only decrement if quantity is greater than 1
+    if (existingItem.quantity > 1) {
+      const newQuantity = existingItem.quantity - 1;
+
+      setOrderItems(prev =>
+        prev.map(item =>
           item.OrderItemID === existingItem.OrderItemID
             ? { ...item, quantity: newQuantity }
             : item
-        );
-        setOrderItems(updatedItems);
-        updateQuantityWithTracking(orderId, existingItem.OrderItemID, menuItemId, newQuantity);
-      } else {
-        const updatedItems = orderItems.filter(item => item.OrderItemID !== existingItem.OrderItemID);
-        setOrderItems(updatedItems);
-        removeItem(orderId, existingItem.OrderItemID, menuItemId);
-      }
+        )
+      );
+
+      updateQuantity(orderId, existingItem.OrderItemID, menuItemId, newQuantity);
     }
+    // If quantity is 1, do nothing (don't remove the item)
   };
 
-  // Wrapper function to handle race conditions for updates
-  const updateQuantityWithTracking = (orderId, orderItemId, menuItemId, newQuantity) => {
-    // Generate unique request ID
-    const requestId = ++requestCounter.current;
-    
-    // Store this request as pending for this orderItemId
-    pendingRequests.current.set(orderItemId, requestId);
-    
-    // Prepare API request
-    const body = {
-      "Items": [
-        {
-          "OrderItemID": orderItemId,
-          "order_items": menuItemId,
-          "quantity": newQuantity
-        }
-      ]
-    };
-    
-    // Make API call
-    fetch(`${import.meta.env.VITE_BACKEND}Order/update/${orderId}/`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    })
-      .then(res => res.json())
-      .then(data => {
-        const latestRequestId = pendingRequests.current.get(orderItemId);
-        if (latestRequestId === requestId) {
-          console.log("Applying update for request:", requestId, "Quantity:", newQuantity);
-          if (data.Items) {
-            setOrderItems(data.Items);
-          } else if (data.order_items) {
-            setOrderItems(data.order_items);
-          }
-          pendingRequests.current.delete(orderItemId);
-        } else {
-          console.log("Ignoring stale response for request:", requestId, "Latest is:", latestRequestId);
-        }
-      })
-      .catch(err => {
-        console.error("Update failed:", err);
-        const latestRequestId = pendingRequests.current.get(orderItemId);
-        if (latestRequestId === requestId) {
-          pendingRequests.current.delete(orderItemId);
-        }
-      });
-  };
-
-  // Filter and group items
   const filteredItems = useMemo(() =>
-    displayMenuItems.filter((item) => {
-      if (category !== "All" && item.category !== category) return false;
-      if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
-      return true;
-    }),
-    [displayMenuItems, category, search]
-  );
+      displayMenuItems.filter((item) => {
+        if (category !== "All" && item.category !== category) return false;
+        if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
+        return true;
+      }),
+      [displayMenuItems, category, search]
+    );
 
-  const getCategoryCount = (cat) =>
-    cat === "All" ? displayMenuItems.length : displayMenuItems.filter((i) => i.category === cat).length;
-
-  const groupedItems = useMemo(() => {
+ const groupedItems = useMemo(() => {
     if (category !== "All") return { [category]: filteredItems };
     return CATEGORIES.slice(1).reduce((acc, cat) => {
       const rows = filteredItems.filter((i) => i.category === cat);
@@ -256,12 +210,19 @@ export default function Menu() {
     }, {});
   }, [filteredItems, category]);
 
-  // Stats data
-  const statsData = [
-    { label: "Total Items", value: displayMenuItems.length, icon: <ChefHat size={15} /> },
-    { label: "In Order",    value: cartCount,         icon: <ShoppingCart size={15} /> },
-    { label: "Order Value", value: `₹${cartTotal.toLocaleString("en-IN")}`, icon: <Receipt size={15} /> },
-  ];
+  const cartCount = orderItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+
+const cartTotal = orderItems.reduce(
+  (sum, item) =>
+    sum + (Number(item.Item?.price || 0) * (item.quantity || 0)),
+  0
+);
+
+const statsData = [
+  { label: "Total Items", value: displayMenuItems.length, icon: <ChefHat size={15} /> },
+  { label: "In Order", value: cartCount, icon: <ShoppingCart size={15} /> },
+  { label: "Order Value", value: `₹${cartTotal.toLocaleString("en-IN")}`, icon: <Receipt size={15} /> },
+];
 
   return (
     <div className="app-container">
@@ -269,7 +230,6 @@ export default function Menu() {
       <main className="main-content">
         <div className="menu-page">
 
-          {/* Error Toast */}
           {errorMessage && (
             <div className="error-toast-global" style={{
               position: 'fixed',
@@ -291,7 +251,27 @@ export default function Menu() {
             </div>
           )}
 
-          {/* BANNER */}
+          {creatingOrder && (
+            <div className="error-toast-global" style={{
+              position: 'fixed',
+              top: '20px',
+              right: '20px',
+              backgroundColor: '#f59e0b',
+              color: 'white',
+              padding: '12px 20px',
+              borderRadius: '8px',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              animation: 'slideIn 0.3s ease-out'
+            }}>
+              <AlertCircle size={18} />
+              <span>Creating new order...</span>
+            </div>
+          )}
+
           <div className="menu-banner">
             <div className="banner-left">
               <span className="banner-eyebrow">
@@ -315,11 +295,9 @@ export default function Menu() {
             </div>
           </div>
 
-          {/* BODY */}
           <div className="menu-body">
             <div className="menu-left">
 
-              {/* Search */}
               <div className="top-bar">
                 <div className="search-wrap" onClick={() => searchRef.current?.focus()}>
                   <Search size={15} />
@@ -337,7 +315,6 @@ export default function Menu() {
                 </div>
               </div>
 
-              {/* Category rail + cart icon */}
               <div className="cat-rail">
                 <div className="rails">
                   {CATEGORIES.map((cat) => (
@@ -389,56 +366,54 @@ export default function Menu() {
                             <p>No items in order</p>
                           </div>
                         ) : (
-                          <>
-                            <div className="cart-pop-list">
-                              {orderItems.map((orderItem) => (
-                                <div key={orderItem.OrderItemID} className="cart-pop-row">
-                                  <span className="cpr-name">
-                                    {orderItem.Item?.item_name}
-                                    {orderItem.isTemp && <span style={{ fontSize: '10px', marginLeft: '5px', color: '#f59e0b' }}>(adding...)</span>}
-                                  </span>
-                                  <div className="cpr-controls">
-                                    <button
-                                      className="cpr-btn"
-                                      onClick={() => handleDecrementItem(orderItem.Item?.item_id)}
-                                      disabled={orderItem.isTemp}
-                                    >
-                                      <Minus size={10} />
-                                    </button>
-                                    <span className="cpr-qty">{orderItem.quantity}</span>
-                                    <button
-                                      className="cpr-btn"
-                                      onClick={() => handleAddItem({
-                                        id: orderItem.Item?.item_id,
-                                        name: orderItem.Item?.item_name,
-                                        price: orderItem.Item?.price,
-                                        image: orderItem.Item?.image
-                                      })}
-                                      disabled={orderItem.isTemp}
-                                    >
-                                      <Plus size={10} />
-                                    </button>
-                                  </div>
-                                  <span className="cpr-price">
-                                    ₹{(orderItem.Item?.price * orderItem.quantity).toLocaleString("en-IN")}
-                                  </span>
+                          <div className="cart-pop-list">
+                            {orderItems.map((orderItem) => (
+                              <div key={orderItem.OrderItemID} className="cart-pop-row">
+                                <span className="cpr-name">
+                                  {orderItem.Item?.item_name}
+                                  {orderItem.isTemp && <span style={{ fontSize: '10px', marginLeft: '5px', color: '#f59e0b' }}>(adding...)</span>}
+                                </span>
+                                <div className="cpr-controls">
                                   <button
-                                    className="cpr-del"
-                                    onClick={() => {
-                                      if (!orderItem.isTemp) {
-                                        const updatedItems = orderItems.filter(i => i.OrderItemID !== orderItem.OrderItemID);
-                                        setOrderItems(updatedItems);
-                                        removeItem(orderId, orderItem.OrderItemID, orderItem.Item?.item_id);
-                                      }
-                                    }}
+                                    className="cpr-btn"
+                                    onClick={() => handleDecrementItem(orderItem.Item?.item_id)}
+                                    disabled={orderItem.isTemp || orderItem.quantity === 1}
+                                  >
+                                    <Minus size={10} />
+                                  </button>
+                                  <span className="cpr-qty">{orderItem.quantity}</span>
+                                  <button
+                                    className="cpr-btn"
+                                    onClick={() => handleAddItem({
+                                      id: orderItem.Item?.item_id,
+                                      name: orderItem.Item?.item_name,
+                                      price: orderItem.Item?.price,
+                                      image: orderItem.Item?.image
+                                    })}
                                     disabled={orderItem.isTemp}
                                   >
-                                    <X size={11} />
+                                    <Plus size={10} />
                                   </button>
                                 </div>
-                              ))}
-                            </div>
-                          </>
+                                <span className="cpr-price">
+                                  ₹{(orderItem.Item?.price * orderItem.quantity).toLocaleString("en-IN")}
+                                </span>
+                                <button
+                                  className="cpr-del"
+                                  onClick={() => {
+                                    if (!orderItem.isTemp) {
+                                      const updatedItems = orderItems.filter(i => i.OrderItemID !== orderItem.OrderItemID);
+                                      setOrderItems(updatedItems);
+                                      removeItem(orderId, orderItem.OrderItemID, orderItem.Item?.item_id);
+                                    }
+                                  }}
+                                  disabled={orderItem.isTemp}
+                                >
+                                  <X size={11} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
                     )}
@@ -446,7 +421,6 @@ export default function Menu() {
                 )}
               </div>
 
-              {/* Loading / error */}
               {loading && (
                 <div className="empty-state">
                   <div className="empty-icon">⏳</div>
@@ -460,7 +434,6 @@ export default function Menu() {
                 </div>
               )}
 
-              {/* Item list */}
               {!loading && !error && (
                 filteredItems.length === 0 ? (
                   <div className="empty-state">
@@ -507,12 +480,11 @@ export default function Menu() {
                                   ₹{item.price.toLocaleString("en-IN")}
                                 </span>
 
-                                {/* Stepper */}
                                 {quantity > 0 && orderItem && (
                                   <div className="row-stepper">
                                     <button 
                                       onClick={() => handleDecrementItem(item.id)}
-                                      disabled={orderItem.isTemp}
+                                      disabled={orderItem.isTemp || quantity === 1}
                                     >
                                       <Minus size={11} />
                                     </button>
@@ -529,29 +501,12 @@ export default function Menu() {
                                   </div>
                                 )}
 
-                                <button
-                                  className="row-icon-btn"
-                                  onClick={() => alert(`Edit item ${item.id}`)}
-                                  title="Edit"
-                                >
-                                  <Edit2 size={13} />
-                                </button>
-
-                                <button
-                                  className="row-icon-btn row-del"
-                                  onClick={() => alert(`Delete item ${item.id}`)}
-                                  title="Delete"
-                                >
-                                  <Trash2 size={13} />
-                                </button>
-
-                                {/* Add button */}
                                 {selectedTable?.id && quantity === 0 && (
                                   <button
                                     className={`row-add-btn ${flashId === item.id ? "flash" : ""}`}
                                     onClick={() => handleAddItem(item)}
                                     title="Add to order"
-                                    disabled={pendingAdds[item.id]}
+                                    disabled={pendingAdds[item.id] || creatingOrder}
                                   >
                                     {flashId === item.id
                                       ? <CheckCircle2 size={14} />
